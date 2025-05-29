@@ -1,11 +1,26 @@
-<script setup lang="ts">
-
-</script>
-
+<!-- RealTimeClock.vue -->
 <template>
-  $END$
+  <span>{{ currentTime }}</span>
 </template>
 
-<style scoped>
+<script setup lang="ts">
+import { ref, onMounted, onBeforeUnmount } from 'vue'
+import dayjs from 'dayjs'
 
-</style>
+const currentTime = ref(dayjs().format('MM月DD日 HH:mm:ss'))
+
+let timer: number
+
+const updateTime = () => {
+  currentTime.value = dayjs().format('MM月DD日 HH:mm:ss')
+}
+
+onMounted(() => {
+  updateTime()
+  timer = setInterval(updateTime, 1000)
+})
+
+onBeforeUnmount(() => {
+  clearInterval(timer)
+})
+</script>

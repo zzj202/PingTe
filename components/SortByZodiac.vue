@@ -1,20 +1,24 @@
 <template>
   <div class="zodiac-container">
-    <var-table border>
-      <thead>
+    <var-table v-for="item in zodiacGroups" :key="item.name">
+      <tbody>
       <tr>
-        <th>生肖</th>
-        <th>号码</th>
-      </tr>
-      <tr v-for="item in zodiacGroups" :key="item.name">
-        <td>{{ item.name }}</td>
-        <th v-for="it in item.numbers" :key="it">
-          <NumberMenu :number="it.number"></NumberMenu>
+        <td>
+          <ZodiacMenu :name="item.name"></ZodiacMenu>
+        </td>
+        <th style="padding:5px 5px 25px 5px" v-for="it in item.numbers" :key="it">
+
+          <var-badge type="danger" position="left-top" :offset-x="25" :offset-y="50"
+                     :value="'￥'+store.getBetByNumber(it.number)"
+                     :hidden="store.getBetByNumber(it.number)===0">
+            <NumberMenu :number="it.number"></NumberMenu>
+          </var-badge>
         </th>
       </tr>
-      </thead>
-
+      </tbody>
     </var-table>
+
+
   </div>
 </template>
 
@@ -45,9 +49,7 @@ const zodiacGroups = computed(() => {
       groups[item.name].numbers.push(item)
     }
   })
-
   // 按预定顺序返回
-  console.log(zodiacOrder.map(name => groups[name]))
   return zodiacOrder.map(name => groups[name])
 })
 
@@ -55,41 +57,5 @@ const zodiacGroups = computed(() => {
 </script>
 
 <style scoped>
-.zodiac-group-container {
-  margin: 20px;
-}
 
-.number-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
-  gap: 12px;
-}
-
-.number-card {
-  border: 1px solid #eee;
-  border-radius: 8px;
-  padding: 8px;
-  text-align: center;
-  transition: all 0.3s;
-}
-
-.number-card.has-bet {
-  border-color: #ff9800;
-  background-color: #fff3e0;
-}
-
-.number {
-  font-size: 18px;
-  font-weight: bold;
-  margin-bottom: 4px;
-}
-
-.total {
-  color: #f44336;
-  font-size: 14px;
-}
-
-.beilv {
-  margin-top: 4px;
-}
 </style>
