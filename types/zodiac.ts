@@ -33,3 +33,30 @@ export interface MainStoreState {
     changCiList: ChangCiItem[]
     currentZodiacData: ZodiacDataArray
 }
+
+/**
+ * 操作记录类型定义
+ */
+export interface OperationRecord {
+  type?: string;
+  typeText?: string;
+  title?: string;
+  description?: string;
+  timestamp?: number;
+  details?: {
+    pingMa?: number;
+    teMa?: number;
+    oldPingMa?: number;
+    oldTeMa?: number;
+    operator?: string;
+    [key: string]: any;
+  };
+  status?: 'success' | 'failed' | 'pending';
+  ipAddress?: string;
+  deviceInfo?: {
+    os?: string;
+    browser?: string;
+    device?: string;
+  };
+}
+

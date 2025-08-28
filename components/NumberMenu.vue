@@ -1,21 +1,16 @@
 <template>
-  <var-menu-select v-model="value" @select="handleSelect" placement="right-end"  >
+  <var-menu-select v-model="value" @select="handleSelect" placement="right-end">
     <var-button :type="buttonType">{{ number }}</var-button>
     <template #options>
-      <var-menu-option
-          v-for="option in options"
-          :key="option.value"
-          :label="option.label"
-          :value="option.value"
-      />
+      <var-menu-option v-for="option in options" :key="option.value" :label="option.label" :value="option.value" />
     </template>
   </var-menu-select>
 </template>
 
 <script setup lang="ts">
-import {ref, computed} from 'vue'
-import {useMainStore} from "@/stores/mainStore"
-import {Snackbar, Dialog} from '@varlet/ui'
+import { ref, computed } from 'vue'
+import { useMainStore } from "@/stores/mainStore"
+import { Snackbar, Dialog } from '@varlet/ui'
 import dayjs from 'dayjs'
 
 const store = useMainStore()
@@ -45,17 +40,19 @@ const buttonType = computed(() => {
 
 const value = ref()
 const options = [
-  {label: '+1', value: 1},
-  {label: '+5', value: 5},
-  {label: '+10', value: 10},
-  {label: '+20', value: 20},
-  {label: '+50', value: 50},
-  {label: '+100', value: 100},
-  {label: '===分割线', value: 0},
-  {label: '-1', value: -1},
-  {label: '-5', value: -5},
-  {label: '-10', value: -10},
-  {label: '-50', value: -50}
+  { label: '-1', value: -1 },
+  { label: '-5', value: -5 },
+  { label: '-10', value: -10 },
+  { label: '-50', value: -50 },
+  { label: '===分割线', value: 0 },
+  { label: '+1', value: 1 },
+  { label: '+5', value: 5 },
+  { label: '+10', value: 10 },
+  { label: '+20', value: 20 },
+  { label: '+50', value: 50 },
+  { label: '+100', value: 100 },
+
+
 ]
 
 async function handleSelect(value: number) {

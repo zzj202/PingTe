@@ -6,45 +6,34 @@
         <p>
           <client-only>
             <span>{{
-                dayjs(store.currentChangCi.createdAt).format('MM月DD日HH:mm-')
-              }}{{ store.currentChangCi.name }}</span>
+              dayjs(store.currentChangCi.createdAt).format('MM月DD日HH:mm-')
+            }}{{ store.currentChangCi.name }}</span>
           </client-only>
 
         </p>
       </template>
       <template #right>
-        <var-button
-            color="transparent"
-            text-color="#fff"
-            round
-            text
-            @click="refreshData"
-            style="margin-right: 8px"
-        >
-          <var-icon name="refresh" :size="24"/>
+        <var-button color="transparent" text-color="#fff" round text @click="refreshData" style="margin-right: 8px">
+          <var-icon name="refresh" :size="24" />
         </var-button>
         <var-menu>
-          <var-button
-              color="transparent"
-              text-color="#fff"
-              round
-              text>
-            <var-icon name="menu" :size="24"/>
+          <var-button color="transparent" text-color="#fff" round text>
+            <var-icon name="menu" :size="24" />
           </var-button>
           <template #menu>
-            <var-cell @click="beilvShow=true" ripple>设置中奖赔率</var-cell>
-            <var-cell @click="zhongjiangShow=true" ripple>设置中奖号码</var-cell>
-            <var-cell @click="createShow=true" ripple>创建新场次</var-cell>
+            <var-cell @click="changeNameShow = true" ripple>修改成次名</var-cell>
+            <var-cell @click="beilvShow = true" ripple>设置中奖赔率</var-cell>
+            <var-cell @click="zhongjiangShow = true" ripple>设置中奖号码</var-cell>
+            <var-cell @click="createShow = true" ripple>创建新场次</var-cell>
           </template>
         </var-menu>
       </template>
-
       <template #content>
         <div>
-          <div v-if="store.currentChangCi.pingMaList.length&&store.currentChangCi.teMa">
+          <div v-if="store.currentChangCi.pingMaList.length && store.currentChangCi.teMa">
             <span style="padding: 5px;">本期号码：</span>
-            <b style="padding: 5px; color: #fd9c00" v-for="(item,index) in store.currentChangCi.pingMaList"
-               :key="index">{{
+            <b style="padding: 5px; color: #fd9c00" v-for="(item, index) in store.currentChangCi.pingMaList"
+              :key="index">{{
                 item
               }}</b>
             <b style="padding: 5px; color: red">{{ store.currentChangCi.teMa }}</b>
@@ -54,30 +43,44 @@
             <span v-if="store.calculateTotalPei()" style="padding: 5px">总赔付:￥{{ store.calculateTotalPei() }}</span>
           </div>
         </div>
-        <var-tabs
-            style="margin-top: 5px"
-            color="transparent"
-            active-color="#fff"
-            inactive-color="#ddd"
-            v-model:active="active"
-        >
+        <var-tabs style="margin-top: 5px" color="transparent" active-color="#fff" inactive-color="#ddd"
+          v-model:active="active">
+          <var-tab>展示图</var-tab>
+          <var-tab>加注操作</var-tab>
           <var-tab>按生效排序</var-tab>
           <var-tab>按数字排序</var-tab>
           <var-tab>历史操作</var-tab>
+
+
         </var-tabs>
       </template>
     </var-app-bar>
   </var-sticky>
-  <div v-if="active===0">
+  <div v-if="active === 0">
+    <ShowArea></ShowArea>
+  </div>
+  <div v-if="active === 2">
     <SortByZodiac></SortByZodiac>
   </div>
-  <div v-else-if="active===1">
+  <div v-else-if="active === 3">
     <SortByNumbers></SortByNumbers>
   </div>
-  <div v-else-if="active===2">
+  <div v-else-if="active === 1">
+    <OperationArea></OperationArea>
+  </div>
+  <div v-else-if="active === 4">
     <OperateHistory></OperateHistory>
   </div>
 
+  <!--修改成次名称 -->
+  <var-overlay v-model:show="changeNameShow">
+    <div class="overlay-content">
+      <div style="padding:20px">
+        <var-input placeholder="请输入名称" v-model="newChangciName" autofocus clearable></var-input>
+      </div>
+      <var-button type="primary" block @click="clickChange">确定修改</var-button>
+    </div>
+  </var-overlay>
   <!--创建新场次 -->
   <var-overlay v-model:show="createShow">
     <div class="overlay-content">
@@ -92,12 +95,12 @@
     <div class="overlay-content">
       <var-cell title="平码倍率">
         <template #extra>
-          <var-counter v-model="pingMaBeilv" @change="updateBeilvImmediately"/>
+          <var-counter v-model="pingMaBeilv" @change="updateBeilvImmediately" />
         </template>
       </var-cell>
       <var-cell title="特码倍率">
         <template #extra>
-          <var-counter v-model="teMaBeilv" @change="updateBeilvImmediately"/>
+          <var-counter v-model="teMaBeilv" @change="updateBeilvImmediately" />
         </template>
       </var-cell>
     </div>
@@ -110,11 +113,7 @@
           <var-menu-select placement="right-end" size="large" scrollable v-model="teMa" @select="clickConfirm">
             <var-button type="primary">{{ teMa ? teMa : '请选择' }}</var-button>
             <template #options>
-              <var-menu-option
-                  v-for="item in 49"
-                  :label="formatNumber(item)"
-                  :key="item"
-              />
+              <var-menu-option v-for="item in 49" :label="formatNumber(item)" :key="item" />
             </template>
           </var-menu-select>
         </template>
@@ -122,11 +121,11 @@
       <var-cell title="平码">
         <template #extra>
           <var-menu-select size="large" scrollable multiple v-model="pingMaArray" placement="right-end"
-                           @select="updateZhongjiangImmediately">
+            @select="updateZhongjiangImmediately">
             <var-button type="primary">{{ pingMaArray.length ? pingMaArray : '请选择' }}</var-button>
             <template #options>
-              <var-menu-option v-for="item in 49" :disabled="pingMaNum === 6||formatNumber(item)==teMa"
-                               :label="formatNumber(item)" :key="item"/>
+              <var-menu-option v-for="item in 49" :disabled="pingMaNum === 6 || formatNumber(item) == teMa"
+                :label="formatNumber(item)" :key="item" />
             </template>
           </var-menu-select>
         </template>
@@ -149,10 +148,10 @@
 
 <script setup lang="ts">
 import SortByZodiac from '@/components/SortByZodiac.vue'
-import {ref} from 'vue'
-import {useMainStore} from "@/stores/mainStore";
+import { ref } from 'vue'
+import { useMainStore } from "@/stores/mainStore";
 import dayjs from "dayjs";
-import {Snackbar} from '@varlet/ui'
+import { Snackbar } from '@varlet/ui'
 import OperateHistory from "~/components/OperateHistory.vue";
 
 
@@ -160,6 +159,7 @@ const active = ref(0)
 const store = useMainStore()
 
 store.initialize() // 确保客户端初始化数据
+const changeNameShow = ref(false);
 const createShow = ref(false);
 const beilvShow = ref(false);
 const zhongjiangShow = ref(false);
@@ -169,9 +169,9 @@ const pingMaBeilv = ref(store.currentChangCi.pingMaBeilv)
 const teMaBeilv = ref(store.currentChangCi.teMaBeilv)
 
 const pingMaArray = ref(
-    store.currentChangCi.pingMaList
-        ? JSON.parse(JSON.stringify(store.currentChangCi.pingMaList))
-        : []
+  store.currentChangCi.pingMaList
+    ? JSON.parse(JSON.stringify(store.currentChangCi.pingMaList))
+    : []
 )
 const pingMaNum = computed(() => {
   return Object.keys(pingMaArray.value).length
@@ -191,6 +191,21 @@ function clickCreate() {
   createShow.value = false
   newChangciName.value = ''
   clickReset()
+  refreshData()
+}
+function clickChange() {
+  if (!newChangciName.value.trim()) {
+    Snackbar.error('请输入场次名称')
+    return
+  }
+  if (newChangciName.value.trim() === store.currentChangCi.name) {
+    Snackbar.warning('名称未更改，无需更新')
+    return
+  }
+  store.updateChangCiName(newChangciName.value.trim())
+  Snackbar.success('修改成功')
+  changeNameShow.value = false
+  newChangciName.value = ''
 }
 
 // 实时更新赔率
@@ -230,7 +245,7 @@ function updateZhongjiangImmediately(newPingMa: string) {
   Snackbar.success(`已添加平码 ${newPingMa}，当前平码数量: ${pingMaNum.value}/6`)
   if (pingMaNum.value === 6) {
     clickConfirm()
-    zhongjiangShow.value=false
+    zhongjiangShow.value = false
   }
   return true
 }
@@ -247,6 +262,7 @@ function clickReset() {
 
   Snackbar.success('已重置所有选择')
   store.updateWinningNumbers()
+  
 }
 
 // 确定按钮点击事件
@@ -309,7 +325,7 @@ const refreshData = () => {
   window.location.reload();
 };
 // 数字格式化函数
-const formatNumber = (num) => {
+const formatNumber = (num: any) => {
   return num.toString().padStart(2, '0')
 }
 </script>

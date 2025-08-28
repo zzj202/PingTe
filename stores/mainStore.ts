@@ -1,7 +1,7 @@
 //mainStore
-import {defineStore} from 'pinia'
-import type {ChangCiItem, ZodiacDataArray} from "~/types/zodiac";
-import {staticPingMaBeiLv, staticTeMaBeiLv, zodiacDataArray} from "~/data/zodiac";
+import { defineStore } from 'pinia'
+import type { ChangCiItem, ZodiacDataArray, OperationRecord } from "~/types/zodiac";
+import { staticPingMaBeiLv, staticTeMaBeiLv, zodiacDataArray } from "~/data/zodiac";
 
 
 export const useMainStore = defineStore('main', {
@@ -76,6 +76,14 @@ export const useMainStore = defineStore('main', {
             this.currentChangCiId = newId
             this.currentZodiacData = newChangCi.zodiacData
         },
+        //更新场次名称
+        updateChangCiName( newName: string) {
+            const id = this.currentChangCiId
+            const changCi = this.changCiList.find(item => item.id === id)
+            if (changCi) {
+                changCi.name = newName
+            }
+        },
 
         // 切换当前场次
         setCurrentChangCi(id: number) {
@@ -120,6 +128,75 @@ export const useMainStore = defineStore('main', {
                 }
                 this.updateWinningNumbers()
             }
+        },
+        /**
+       * 更新多个号码的投注额
+       * @param numbers 号码数组，如 ['01', '04']
+       * @param amount 要增加的金额（可为负数）
+       */
+        updateNumberArrayBet(numbers: string[], amount: number) {
+            // 过滤掉无效号码
+            const validNumbers = numbers.filter(num =>
+                this.currentZodiacData.some(item => item.number === num)
+            )
+
+            if (validNumbers.length === 0) {
+                console.warn('没有找到有效的号码')
+                return
+            }
+
+            // 记录所有变更
+            const changes = validNumbers.map(number => {
+                const item = this.currentZodiacData.find(item => item.number === number)!
+                const oldTotal = item.total
+                const zodiacName = item.name
+                // 更新投注额（确保不小于0）
+                item.total = Math.max(0, item.total + amount)
+
+                return {
+                    number,
+                    amount,
+                    total: item.total,
+                    oldTotal,
+                    zodiac: zodiacName
+                }
+            })
+
+            // 生成操作记录描述
+            const type = 'more'
+            const typeText = '批量下注'
+            const actionText = '加注'
+            const absAmount = Math.abs(amount)
+
+            // 如果操作多个号码，使用简化的描述
+            let description: string
+            if (validNumbers.length <= 3) {
+                // 数量少时显示具体号码
+                const numberList = validNumbers.map(num => {
+                    const item = this.currentZodiacData.find(i => i.number === num)!
+                    return `${item.name}${num}`
+                }).join('、')
+                description = `${actionText} ${numberList} 号 各${absAmount}元`
+            } else {
+                // 数量多时显示统计信息
+                description = `${actionText} ${validNumbers.length}个号码 各${absAmount}元`
+            }
+
+            // 添加操作记录
+            this.addOperationRecord({
+                type,
+                typeText,
+                title: '批量下注' ,
+                description,
+                details: {
+                    numbers: validNumbers,
+                    amount,
+                    changes, // 包含所有变更的详细信息
+                    operator: '用户'
+                }
+            })
+
+            this.updateWinningNumbers()
         },
 
         /**
@@ -191,7 +268,7 @@ export const useMainStore = defineStore('main', {
             this.updateWinningNumbers();
         },
         // 添加操作记录
-        addOperationRecord(record: Omit<OperationRecord, 'time'>) {
+        addOperationRecord(record: OperationRecord) {
             if (!this.currentChangCi) return
 
             if (!this.currentChangCi.operateHistory) {
@@ -385,10 +462,10 @@ export const useMainStore = defineStore('main', {
     },
     // 持久化配置
     persist:
-        {
-            storage: process.client ? localStorage : undefined,
+    {
+        storage: process.client ? localStorage : undefined,
 
-        }
+    }
 })
 
 /**
