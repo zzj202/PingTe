@@ -1,136 +1,139 @@
 <template>
     <div class="bet-container">
-        <h1 class="title">加注</h1>
+        <div class="layout-container">
+            <!-- 左侧：加注操作区域 -->
+            <div class="operation-section">
+                <!-- 数字输入区域 -->
+                <div class="input-section">
+                    <label for="number-input" class="input-label">输入数字号码（支持多种分隔符）</label>
+                    <input id="number-input" type="text" v-model="inputValue"
+                        placeholder="例如：43.12.48.46.13.37.6.25.33.7.46.47 或 08/10/18/48" @input="processNumbers"
+                        class="number-input">
 
-        <!-- 数字输入区域 -->
-        <div class="input-section">
-            <label for="number-input" class="input-label">输入数字号码（支持多种分隔符）</label>
-            <input id="number-input" type="text" v-model="inputValue"
-                placeholder="例如：43.12.48.46.13.37.6.25.33.7.46.47 或 08/10/18/48" @input="processNumbers"
-                class="number-input">
+                    <!-- 尾数快捷按钮 -->
+                    <div class="tail-number-section">
+                        <div class="tail-number-group">
+                            <span class="tail-label">尾数：</span>
+                            <button v-for="tail in 10" :key="tail" @click="toggleTailSelection(tail === 10 ? 0 : tail)"
+                                :class="{ 'active': selectedTails.includes(tail === 10 ? 0 : tail) }" class="tail-button">
+                                {{ tail === 10 ? '0' : tail }}
+                            </button>
+                        </div>
+                    </div>
 
-            <!-- 尾数快捷按钮 -->
-            <div class="tail-number-section">
-                <div class="tail-number-group">
-                    <span class="tail-label">尾数：</span>
-                    <button v-for="tail in 10" :key="tail" @click="selectTailNumbers(tail === 10 ? 0 : tail)"
-                        :class="{ 'active': selectedTail === (tail === 10 ? 0 : tail) }" class="tail-button">
-                        {{ tail === 10 ? '0' : tail }}
-                    </button>
+                    <!-- 十二生肖按钮组 -->
+                    <div class="zodiac-section">
+                        <div class="zodiac-group">
+                            <span class="zodiac-label">生肖：</span>
+                            <button v-for="zodiac in zodiacList" :key="zodiac.name" @click="toggleZodiacSelection(zodiac.name)"
+                                :class="{ 'active': selectedZodiacs.includes(zodiac.name) }" class="zodiac-button">
+                                {{ zodiac.name }}
+                            </button>
+                        </div>
+                    </div>
                 </div>
-            </div>
 
-            <!-- 十二生肖按钮组 -->
-            <div class="zodiac-section">
-                <div class="zodiac-group">
-                    <span class="zodiac-label">生肖：</span>
-                    <button v-for="zodiac in zodiacList" :key="zodiac.name" @click="selectZodiac(zodiac.name)"
-                        :class="{ 'active': selectedZodiac === zodiac.name }" class="zodiac-button">
-                        {{ zodiac.name }}
-                    </button>
+                <!-- 注数输入区域 -->
+                <div class="input-section">
+                    <label for="bet-count" class="input-label">注数</label>
+                    <div class="bet-input-wrapper">
+                        <input id="bet-count" type="number" v-model.number="betCount" min="1" placeholder="输入注数"
+                            @input="processBetCount" class="bet-input">
+                        <div class="quick-bet-buttons">
+                            <button v-for="count in quickBetCounts" :key="count" @click="setBetCount(count)"
+                                class="quick-bet-button">
+                                {{ count }}
+                            </button>
+                        </div>
+                    </div>
                 </div>
-            </div>
-        </div>
 
-        <!-- 注数输入区域 -->
-        <div class="input-section">
-            <label for="bet-count" class="input-label">注数</label>
-            <div class="bet-input-wrapper">
-                <input id="bet-count" type="number" v-model.number="betCount" min="1" placeholder="输入注数"
-                    @input="processBetCount" class="bet-input">
-                <div class="quick-bet-buttons">
-                    <button v-for="count in quickBetCounts" :key="count" @click="setBetCount(count)"
-                        class="quick-bet-button">
-                        {{ count }}
-                    </button>
+                <!-- 错误提示 -->
+                <div class="error-message" v-if="errorMessage">
+                    <svg class="error-icon" viewBox="0 0 24 24">
+                        <path
+                            d="M12 8V12M12 16H12.01M21 12C21 16.9706 16.9706 21 12 21C7.02944 21 3 16.9706 3 12C3 7.02944 7.02944 3 12 3C16.9706 3 21 7.02944 21 12Z"
+                            stroke="#EF4444" stroke-width="2" stroke-linecap="round" />
+                    </svg>
+                    <span>{{ errorMessage }}</span>
                 </div>
+
+                <!-- 结果展示 -->
+                <div class="result-section" v-if="numberArray.length > 0 && !errorMessage">
+                    <div class="result-title">要加注的号码：</div>
+                    <div class="number-list">
+                        <span v-for="(number, index) in numberArray" :key="index" class="number-item">
+                            {{ number }}
+                        </span>
+                    </div>
+                    <div class="total-bet" v-if="betCount > 0">
+                        每个号码加注：<span class="highlight">{{ betCount }}</span> 元，
+                        总金额：<span class="highlight">{{ numberArray.length * betCount }}</span> 元
+                    </div>
+                </div>
+
+                <!-- 空状态 -->
+                <div class="empty-state" v-else-if="!errorMessage">
+                    <svg class="empty-icon" viewBox="0 0 24 24">
+                        <path
+                            d="M12 8V12M12 16H12.01M21 12C21 16.9706 16.9706 21 12 21C7.02944 21 3 16.9706 3 12C3 7.02944 7.02944 3 12 3C16.9706 3 21 7.02944 21 12Z"
+                            stroke="#9CA3AF" stroke-width="2" stroke-linecap="round" />
+                    </svg>
+                    <p>输入数字序列后，提取的结果将显示在这里</p>
+                </div>
+
+                <!-- 提交按钮 -->
+                <button class="submit-button" @click="handleSubmit" :disabled="!isFormValid">
+                    提交
+                </button>
             </div>
-        </div>
 
-        <!-- 错误提示 -->
-        <div class="error-message" v-if="errorMessage">
-            <svg class="error-icon" viewBox="0 0 24 24">
-                <path
-                    d="M12 8V12M12 16H12.01M21 12C21 16.9706 16.9706 21 12 21C7.02944 21 3 16.9706 3 12C3 7.02944 7.02944 3 12 3C16.9706 3 21 7.02944 21 12Z"
-                    stroke="#EF4444" stroke-width="2" stroke-linecap="round" />
-            </svg>
-            <span>{{ errorMessage }}</span>
-        </div>
-
-        <!-- 结果展示 -->
-        <div class="result-section" v-if="numberArray.length > 0 && !errorMessage">
-            <div class="result-title">要加注的号码：</div>
-            <div class="number-list">
-                <span v-for="(number, index) in numberArray" :key="index" class="number-item">
-                    {{ number }}
-                </span>
-            </div>
-            <div class="total-bet" v-if="betCount > 0">
-                每个号码加注：<span class="highlight">{{ betCount }}</span> 元，
-                总金额：<span class="highlight">{{ numberArray.length * betCount }}</span> 元
-            </div>
-        </div>
-
-        <!-- 空状态 -->
-        <div class="empty-state" v-else-if="!errorMessage">
-            <svg class="empty-icon" viewBox="0 0 24 24">
-                <path
-                    d="M12 8V12M12 16H12.01M21 12C21 16.9706 16.9706 21 12 21C7.02944 21 3 16.9706 3 12C3 7.02944 7.02944 3 12 3C16.9706 3 21 7.02944 21 12Z"
-                    stroke="#9CA3AF" stroke-width="2" stroke-linecap="round" />
-            </svg>
-            <p>输入数字序列后，提取的结果将显示在这里</p>
-        </div>
-
-        <!-- 提交按钮 -->
-        <button class="submit-button" @click="handleSubmit" :disabled="!isFormValid">
-            提交
-        </button>
-
-        <!-- 操作记录表格 -->
-        <div class="records-section" v-if="operationRecords.length > 0">
-            <h2 class="records-title">操作记录</h2>
-            <div class="table-container">
-                <table class="records-table">
-                    <thead>
-                        <tr>
-                            <th>序号</th>
-                            <th>号码</th>
-                            <th>每个加注</th>
-                            <th>总金额</th>
-                            <th>操作时间</th>
-                            <th>操作</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr v-for="(record, index) in operationRecords" :key="index">
-                            <td>{{ index + 1 }}</td>
-                            <td class="numbers-cell">
-                                <div class="numbers-list">
-                                    <span v-for="(num, i) in record.numbers" :key="i" class="number-badge">
-                                        {{ num }}
-                                    </span>
-                                </div>
-                            </td>
-                            <td>{{ record.betCount }} 元</td>
-                            <td>{{ record.betCount * record.numbers.length }} 元</td>
-                            <td>{{ formatTime(record.timestamp) }}</td>
-                            <td>
-                                <button class="delete-button" @click="removeRecord(index)">
-                                    <svg class="delete-icon" viewBox="0 0 24 24">
-                                        <path d="M19 7L18.1327 19.1425C18.0579 20.1891 17.187 21 16.1378 21H7.86224C6.81296 21 5.94208 20.1891 5.86732 19.1425L5 7M10 11V17M14 11V17M15 7V4C15 3.44772 14.5523 3 14 3H10C9.44772 3 9 3.44772 9 4V7M4 7H20" stroke="#EF4444" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                                    </svg>
-                                </button>
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
+            <!-- 右侧：操作记录区域 -->
+            <div class="records-section" v-if="operationRecords.length > 0">
+                <h2 class="records-title">操作记录</h2>
+                <div class="table-container">
+                    <table class="records-table">
+                        <thead>
+                            <tr>
+                                <th>序号</th>
+                                <th>号码</th>
+                                <th>每个加注</th>
+                                <th>总金额</th>
+                                <th>操作时间</th>
+                                <th>操作</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr v-for="(record, index) in operationRecords" :key="index">
+                                <td>{{ index + 1 }}</td>
+                                <td class="numbers-cell">
+                                    <div class="numbers-list">
+                                        <span v-for="(num, i) in record.numbers" :key="i" class="number-badge">
+                                            {{ num }}
+                                        </span>
+                                    </div>
+                                </td>
+                                <td>{{ record.betCount }} 元</td>
+                                <td>{{ record.betCount * record.numbers.length }} 元</td>
+                                <td>{{ formatTime(record.timestamp) }}</td>
+                                <td>
+                                    <button class="delete-button" @click="removeRecord(index)">
+                                        <svg class="delete-icon" viewBox="0 0 24 24">
+                                            <path d="M19 7L18.1327 19.1425C18.0579 20.1891 17.187 21 16.1378 21H7.86224C6.81296 21 5.94208 20.1891 5.86732 19.1425L5 7M10 11V17M14 11V17M15 7V4C15 3.44772 14.5523 3 14 3H10C9.44772 3 9 3.44772 9 4V7M4 7H20" stroke="#EF4444" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                        </svg>
+                                    </button>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
     </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 
 interface OperationRecord {
     numbers: string[]
@@ -143,7 +146,8 @@ const inputValue = ref('')
 const numberArray = ref<string[]>([])
 const errorMessage = ref('')
 const betCount = ref(0)
-const selectedTail = ref<number | null>(null)
+const selectedTails = ref<number[]>([])
+const selectedZodiacs = ref<string[]>([])
 const operationRecords = ref<OperationRecord[]>([])
 
 // 固定的快速注数按钮
@@ -186,45 +190,66 @@ const zodiacData = [
     { name: '猪', numbers: ['07', '19', '31', '43'] }
 ]
 const zodiacList = ref(zodiacData)
-const selectedZodiac = ref<string | null>(null)
 
-// 选择尾数
-const selectTailNumbers = (tail: number) => {
-    if (selectedTail.value === tail) {
-        // 取消选择
-        selectedTail.value = null
-        inputValue.value = ''
-        numberArray.value = []
-        selectedZodiac.value = null
-    } else {
-        selectedTail.value = tail
-        selectedZodiac.value = null
-        const numbers = tailNumbers[tail]
-        inputValue.value = numbers.join(', ')
-        numberArray.value = numbers
-        errorMessage.value = ''
+// 切换尾数选择
+const toggleTailSelection = (tail: number) => {
+    if (selectedZodiacs.value.length > 0) {
+        errorMessage.value = "请先取消已选的生肖"
+        return
     }
+    
+    const index = selectedTails.value.indexOf(tail)
+    if (index === -1) {
+        selectedTails.value.push(tail)
+    } else {
+        selectedTails.value.splice(index, 1)
+    }
+    updateNumbersFromSelection()
 }
 
-// 选择生肖
-const selectZodiac = (zodiacName: string) => {
-    if (selectedZodiac.value === zodiacName) {
-        // 取消选择
-        selectedZodiac.value = null
+// 切换生肖选择
+const toggleZodiacSelection = (zodiacName: string) => {
+    if (selectedTails.value.length > 0) {
+        errorMessage.value = "请先取消已选的尾数"
+        return
+    }
+    
+    const index = selectedZodiacs.value.indexOf(zodiacName)
+    if (index === -1) {
+        selectedZodiacs.value.push(zodiacName)
+    } else {
+        selectedZodiacs.value.splice(index, 1)
+    }
+    updateNumbersFromSelection()
+}
+
+// 根据选择更新号码数组
+const updateNumbersFromSelection = () => {
+    errorMessage.value = ''
+    
+    if (selectedTails.value.length > 0) {
+        // 尾数选择模式
+        const numbers: string[] = []
+        selectedTails.value.forEach(tail => {
+            numbers.push(...tailNumbers[tail])
+        })
+        inputValue.value = numbers.join(', ')
+        numberArray.value = [...new Set(numbers)] // 去重
+    } else if (selectedZodiacs.value.length > 0) {
+        // 生肖选择模式
+        const numbers: string[] = []
+        selectedZodiacs.value.forEach(zodiacName => {
+            const zodiac = zodiacList.value.find(z => z.name === zodiacName)
+            if (zodiac) {
+                numbers.push(...zodiac.numbers)
+            }
+        })
+        inputValue.value = numbers.join(', ')
+        numberArray.value = [...new Set(numbers)] // 去重
+    } else {
+        // 无选择模式
         inputValue.value = ''
         numberArray.value = []
-        selectedTail.value = null
-    } else {
-        selectedZodiac.value = zodiacName
-        selectedTail.value = null
-
-        // 找到对应的生肖数据
-        const zodiac = zodiacList.value.find(z => z.name === zodiacName)
-        if (zodiac) {
-            inputValue.value = zodiac.numbers.join(', ')
-            numberArray.value = zodiac.numbers
-            errorMessage.value = ''
-        }
     }
 }
 
@@ -266,16 +291,16 @@ const processBetCount = () => {
         quickBetCounts.value.push(betCount.value)
         customBetCount.value = betCount.value
 
-        // 保持按钮排序
-        quickBetCounts.value.sort((a, b) => a - b)
+        // // 保持按钮排序
+        // quickBetCounts.value.sort((a, b) => a - b)
     }
 }
 
 // 处理数字输入
 const processNumbers = () => {
     errorMessage.value = ''
-    selectedTail.value = null // 手动输入时取消尾数选择
-    selectedZodiac.value = null // 手动输入时取消生肖选择
+    selectedTails.value = [] // 手动输入时取消尾数选择
+    selectedZodiacs.value = [] // 手动输入时取消生肖选择
 
     const numbers = inputValue.value.match(/\d+/g)
 
@@ -353,8 +378,8 @@ const handleSubmit = async () => {
     inputValue.value = ''
     numberArray.value = []
     betCount.value = 0
-    selectedTail.value = null
-    selectedZodiac.value = null
+    selectedTails.value = []
+    selectedZodiacs.value = []
 }
 </script>
 
@@ -364,7 +389,7 @@ const handleSubmit = async () => {
     border-radius: 16px;
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
     padding: 2rem;
-    max-width: 800px;
+    max-width: 1200px;
     margin: 1.25rem auto;
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
 }
@@ -376,6 +401,16 @@ const handleSubmit = async () => {
     font-weight: 600;
     font-size: 1.75rem;
     letter-spacing: -0.025em;
+}
+
+.layout-container {
+    display: flex;
+    gap: 2rem;
+}
+
+.operation-section {
+    flex: 1;
+    min-width: 0;
 }
 
 .input-section {
@@ -644,9 +679,11 @@ const handleSubmit = async () => {
 
 /* 操作记录表格样式 */
 .records-section {
-    margin-top: 2rem;
-    border-top: 1px solid #e2e8f0;
-    padding-top: 1.5rem;
+    flex: 1;
+    min-width: 0;
+    max-width: 500px;
+    border-left: 1px solid #e2e8f0;
+    padding-left: 2rem;
 }
 
 .records-title {
@@ -658,6 +695,8 @@ const handleSubmit = async () => {
 
 .table-container {
     overflow-x: auto;
+    max-height: calc(100vh - 200px);
+    overflow-y: auto;
 }
 
 .records-table {
@@ -678,6 +717,8 @@ const handleSubmit = async () => {
     background-color: #f8fafc;
     font-weight: 600;
     color: #334155;
+    position: sticky;
+    top: 0;
 }
 
 .records-table tr:hover {
@@ -753,6 +794,21 @@ const handleSubmit = async () => {
 .records-table th:nth-child(6),
 .records-table td:nth-child(6) {
     width: 60px;
+}
+
+@media (max-width: 1024px) {
+    .layout-container {
+        flex-direction: column;
+    }
+    
+    .records-section {
+        max-width: 100%;
+        border-left: none;
+        border-top: 1px solid #e2e8f0;
+        padding-left: 0;
+        padding-top: 2rem;
+        margin-top: 2rem;
+    }
 }
 
 @media (max-width: 768px) {

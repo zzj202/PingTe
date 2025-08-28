@@ -62,23 +62,12 @@
                 <span class="detail-label">生肖:</span>
                 <span class="detail-value">{{ record.details.zodiac }}</span>
               </div>
-
-              <!-- 赔率信息 -->
-              <div class="detail-row" v-if="record.details.pingMa || record.details.teMa">
-                <var-icon name="chart-line" size="14" />
-                <span class="detail-label">赔率:</span>
-                <span class="detail-value">
-                  <template v-if="record.details.pingMa">平码 {{ record.details.pingMa }}x</template>
-                  <template v-if="record.details.teMa"> / 特码 {{ record.details.teMa }}x</template>
-                </span>
-              </div>
-
               <!-- 操作人信息 -->
-              <div class="detail-row" v-if="record.details.operator">
+              <!-- <div class="detail-row" v-if="record.details.operator">
                 <var-icon name="account" size="14" />
                 <span class="detail-label">操作人:</span>
                 <span class="detail-value">{{ record.details.operator }}</span>
-              </div>
+              </div> -->
             </div>
           </div>
         </div>

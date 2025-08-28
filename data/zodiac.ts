@@ -253,4 +253,4 @@ export const zodiacDataArray: ZodiacDataArray = [
     }
 ];
 export const staticPingMaBeiLv = 2
-export const staticTeMaBeiLv = 50
+export const staticTeMaBeiLv = 47

@@ -15,7 +15,7 @@
                     <span class="zodiac-name">{{ item.name }}</span>
                 </div>
 
-                <div class="zodiac-content">
+                <div v-if="item.total" class="zodiac-content">
                     <div class="amount-row">
                         <span class="value">{{ formatAmount(item.total) }}</span>
                     </div>
@@ -141,31 +141,33 @@ const getZodiacTypeClass = (number: string) => {
     font-size: 16px;
 }
 
+
 /* 金额颜色分类和大小变化 */
 .amount-default .value {
-    color: #666;
+    color: #6b7280; /* 灰色 */
     font-size: 16px;
 }
 
 .amount-low .value {
-    color: #f59e0b;
+    color: #d97706; /* 橙色 */
     font-size: 18px;
 }
 
 .amount-medium .value {
-    color: #ef4444;
+    color: #dc2626; /* 红色 */
     font-size: 20px;
 }
 
 .amount-high .value {
-    color: #dc2626;
+    color: #7c2d12; /* 深红棕色 */
     font-size: 22px;
 }
 
 .amount-super-high .value {
-    color: #991b1b;
+    color: #7f1d1d; /* 深红色 */
     font-weight: 700;
-    font-size: 24px;
+    font-size: 25px;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.1);
 }
 
 /* 号码类型背景色 */
@@ -245,3 +247,4 @@ const getZodiacTypeClass = (number: string) => {
     }
 }
 </style>
+
