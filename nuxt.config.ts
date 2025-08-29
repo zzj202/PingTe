@@ -6,6 +6,6 @@ export default defineNuxtConfig({
 
     devServer: {
         host: '0.0.0.0', // 监听所有网络接口
-        port: 3000 // 或其他你想要的端口
+        port: 3000 ,// 或其他你想要的端口
     }
 })

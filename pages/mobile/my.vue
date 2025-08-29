@@ -18,6 +18,7 @@
       </div>
       <p class="hint-text">设置后，新创建的场次将使用这些默认赔率</p>
     </div>
+
     <!-- 导出所有场次 -->
     <div class="export-section">
       <h3>导出所有场次数据</h3>
@@ -31,6 +32,7 @@
       </div>
       <textarea v-if="showExport" v-model="exportData" readonly class="data-preview"></textarea>
     </div>
+
     <!-- 导入场次数据 -->
     <div class="import-section">
       <h3>导入场次数据</h3>
@@ -52,7 +54,8 @@
         <span class="button-icon">📥</span> 导入
       </button>
     </div>
-    <!-- 新增的清空所有场次按钮 -->
+
+    <!-- 清空所有场次 -->
     <div class="danger-section">
       <h3>危险操作区域</h3>
       <button class="clear-button" @click="confirmClearAll">
@@ -60,21 +63,44 @@
       </button>
       <p class="danger-hint">此操作不可撤销，请谨慎操作！</p>
     </div>
-    <!-- 读取文件到localStorage-->
+
+    <!-- 导出 LocalStorage 数据 -->
     <div class="export-section">
-      <h3>导出 Pinia Store 数据</h3>
-      <button class="export-button" @click="exportLocalStorageToFile">
-        <span class="button-icon">💾</span> 导出数据到文件
-      </button>
-      <p class="hint-text">将当前 Pinia Store 数据导出为 JSON 文件，便于备份或迁移。</p>
+      <h3>导出 LocalStorage 数据</h3>
+      <div class="export-actions">
+        <button class="export-button" @click="exportLocalStorageToFile">
+          <span class="button-icon">💾</span> 导出数据到文件
+        </button>
+        <button class="export-button" @click="showLocalStorageData">
+          <span class="button-icon">👀</span> 查看数据
+        </button>
+      </div>
+      <textarea v-if="showLocalStorageExport" v-model="localStorageData" readonly class="data-preview"></textarea>
+      <p class="hint-text">将当前 LocalStorage 数据导出为 JSON 文件，便于备份或迁移。</p>
     </div>
-  <!--从文件导入到localStorage --> 
+
+    <!-- 导入 LocalStorage 数据 -->
     <div class="import-section">
-      <h3>从文件导入 Pinia Store 数据</h3>
-      <button class="import-button" @click="handleFileInput">
+      <h3>导入 LocalStorage 数据</h3>
+      <div class="import-options">
+        <label>
+          <input type="radio" v-model="importMode" value="merge"> 合并数据
+        </label>
+        <label>
+          <input type="radio" v-model="importMode" value="replace"> 替换全部数据
+        </label>
+      </div>
+      <button class="import-button" @click="triggerFileInput">
         <span class="button-icon">📂</span> 从文件导入数据
       </button>
-      <p class="hint-text">选择之前导出的 JSON 文件，将数据导入到 Pinia Store。</p>
+      <input 
+        ref="fileInput"
+        type="file" 
+        accept=".json" 
+        style="display: none" 
+        @change="handleFileImport"
+      />
+      <p class="hint-text">选择之前导出的 JSON 文件，将数据导入到 LocalStorage。</p>
     </div>
   </div>
 </template>
@@ -85,15 +111,29 @@ import { useMainStore } from '@/stores/mainStore'
 import { Snackbar, Dialog } from '@varlet/ui'
 
 const store = useMainStore()
+
+// 赔率设置相关
+const pingMaInput = ref(store.morenPingMaBeiLv)
+const teMaInput = ref(store.morenTeMaBeiLv)
+
+// 场次数据导入导出相关
 const importStrategy = ref<'new' | 'overwrite' | 'merge'>('new')
 const importData = ref('')
 const exportData = ref('')
 const showExport = ref(false)
 
+// LocalStorage 数据导入导出相关
+const showLocalStorageExport = ref(false)
+const localStorageData = ref('')
+const fileInput = ref<HTMLInputElement | null>(null)
+const importMode = ref<'merge' | 'replace'>('merge')
 
-// 输入框绑定的值
-const pingMaInput = ref(store.morenPingMaBeiLv)
-const teMaInput = ref(store.morenTeMaBeiLv)
+// 保存默认赔率
+const saveDefaultBeiLv = () => {
+  store.updateDefaultBeiLv(pingMaInput.value, teMaInput.value)
+  Snackbar.success('保存成功')
+}
+
 // 获取导出的JSON数据
 const getExportData = () => {
   return JSON.stringify(store.changCiList, null, 2)
@@ -144,7 +184,7 @@ const importChangCi = () => {
     importData.value = ''
   } catch (error) {
     console.error('导入失败:', error)
-    Snackbar.error('导入失败: ' + error.message)
+    Snackbar.error('导入失败: ' + (error instanceof Error ? error.message : '未知错误'))
   }
 }
 
@@ -153,129 +193,158 @@ const clearAllChangCi = () => {
   store.clearAllChangCi()
   Snackbar.success('已清空所有场次数据')
 }
+
 // 确认清空操作
 const confirmClearAll = async () => {
-
   const action = await Dialog({
     title: '确认清空',
     message: `确定要清空所有场次数据吗？此操作不可恢复！`,
     confirmButtonText: '确定清空',
     cancelButtonText: '取消',
-
     confirmButtonTextColor: 'var(--color-danger)',
   })
   if (action !== 'confirm') return
   clearAllChangCi()
 }
-//修改倍率
-const saveDefaultBeiLv = () => {
-  store.updateDefaultBeiLv(pingMaInput.value, teMaInput.value)
-  Snackbar.success('保存成功')
-}
-//复制操作
-function fallbackCopy(text) {
+
+// 复制操作
+function fallbackCopy(text: string) {
   const textarea = document.createElement('textarea')
   textarea.value = text
-  textarea.style.position = 'fixed' // 避免滚动
+  textarea.style.position = 'fixed'
   document.body.appendChild(textarea)
   textarea.select()
   try {
     const successful = document.execCommand('copy')
     if (successful) {
+      Snackbar.success('复制成功')
     } else {
       throw new Error('复制失败')
     }
   } catch (err) {
     console.error('复制失败:', err)
-    // 终极方案：提示用户手动复制
     prompt('请手动复制以下文本', text)
   } finally {
     document.body.removeChild(textarea)
   }
 }
-// 导出 localStorage 数据到文件
-function exportLocalStorageToFile() {
-  // 获取所有 localStorage 数据
-  const allData = {};
+
+// 显示 LocalStorage 数据
+const showLocalStorageData = () => {
+  const data: Record<string, any> = {}
   for (let i = 0; i < localStorage.length; i++) {
-    const key = localStorage.key(i);
+    const key = localStorage.key(i)
     if (key) {
-      allData[key] = localStorage.getItem(key);
+      try {
+        data[key] = JSON.parse(localStorage.getItem(key) || 'null')
+      } catch {
+        data[key] = localStorage.getItem(key)
+      }
+    }
+  }
+  localStorageData.value = JSON.stringify(data, null, 2)
+  showLocalStorageExport.value = !showLocalStorageExport.value
+}
+
+// 导出 LocalStorage 数据到文件
+const exportLocalStorageToFile = () => {
+  const data: Record<string, any> = {}
+  for (let i = 0; i < localStorage.length; i++) {
+    const key = localStorage.key(i)
+    if (key) {
+      try {
+        data[key] = JSON.parse(localStorage.getItem(key) || 'null')
+      } catch {
+        data[key] = localStorage.getItem(key)
+      }
     }
   }
 
-  // 或者只获取特定的 Pinia store 数据
-  const piniaStoreData = localStorage.getItem('pinia_main'); // 'main' 是你的 store 名称
-
-  // 创建 Blob 对象
-  const blob = new Blob([JSON.stringify(piniaStoreData || allData, null, 2)], {
-    type: 'application/json'
-  });
-
-  // 创建下载链接
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = 'pinia_store_backup.json';
-
-  // 触发下载
-  document.body.appendChild(a);
-  a.click();
-
-  // 清理
-  document.body.removeChild(a);
-  URL.revokeObjectURL(url);
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' })
+  const url = URL.createObjectURL(blob)
+  
+  const a = document.createElement('a')
+  a.href = url
+  a.download = `localstorage_backup_${new Date().toISOString().slice(0, 10)}.json`
+  document.body.appendChild(a)
+  a.click()
+  document.body.removeChild(a)
+  
+  URL.revokeObjectURL(url)
+  Snackbar.success('导出成功')
 }
 
-// 从文件导入 localStorage 数据
-function importLocalStorageFromFile(file) {
-  const reader = new FileReader();
-
-  reader.onload = function (e) {
-    try {
-      const data = JSON.parse(e.target.result);
-
-      // 如果是完整的 localStorage 备份
-      if (typeof data === 'object' && !Array.isArray(data)) {
-        Object.keys(data).forEach(key => {
-          localStorage.setItem(key, data[key]);
-        });
-      }
-      // 如果是单个 Pinia store 数据
-      else {
-        localStorage.setItem('pinia_main', data);
-      }
-      Snackbar.success('数据导入成功！');
-      // 可选：刷新页面以应用新数据
-      setTimeout(() => {
-        window.location.reload();
-      }, 1000);
-    } catch (error) {
-      Snackbar.error('数据导入失败，请检查文件格式！');
-      console.error('导入失败:', error);
-    }
-  };
-
-  reader.readAsText(file);
+// 触发文件选择
+const triggerFileInput = () => {
+  if (fileInput.value) {
+    fileInput.value.value = '' // 清除之前的选择
+    fileInput.value.click()
+  }
 }
 
-// 处理文件输入
-function handleFileInput(event) {
-  // 使用方法
-  // 创建一个文件输入元素让用户选择文件
-  const input = document.createElement('input');
-  input.type = 'file';
-  input.accept = '.json';
-  input.onchange = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      importLocalStorageFromFile(file);
-    }
-  };
-  document.body.appendChild(input);
-  input.click();
-  document.body.removeChild(input);
+// 处理文件导入
+const handleFileImport = async (event: Event) => {
+  const input = event.target as HTMLInputElement
+  if (!input.files || input.files.length === 0) return
 
+  const file = input.files[0]
+  if (!file.name.endsWith('.json')) {
+    Snackbar.error('请选择 JSON 文件')
+    return
+  }
+
+  try {
+    const confirmed = await Dialog({
+      title: '确认导入',
+      message: `确定要${importMode.value === 'merge' ? '合并' : '替换'} LocalStorage 数据吗？`,
+      confirmButtonText: '确定',
+      cancelButtonText: '取消',
+    })
+    
+    if (confirmed !== 'confirm') return
+
+    const text = await readFileAsText(file)
+    const data = JSON.parse(text)
+
+    if (importMode.value === 'replace') {
+      localStorage.clear()
+    }
+
+    for (const key in data) {
+      if (typeof data[key] === 'object') {
+        localStorage.setItem(key, JSON.stringify(data[key]))
+      } else {
+        localStorage.setItem(key, data[key])
+      }
+    }
+
+    Snackbar.success('导入成功！')
+    // 延迟刷新让用户看到成功消息
+    setTimeout(() => {
+      window.location.reload()
+    }, 1000)
+  } catch (error) {
+    console.error('导入失败:', error)
+    Snackbar.error(`导入失败: ${error instanceof Error ? error.message : '未知错误'}`)
+  }
+}
+
+// 读取文件为文本
+const readFileAsText = (file: File): Promise<string> => {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onload = (event) => {
+      if (event.target?.result) {
+        resolve(event.target.result as string)
+      } else {
+        reject(new Error('文件读取失败'))
+      }
+    }
+    reader.onerror = () => {
+      reject(new Error('文件读取错误'))
+    }
+    reader.readAsText(file)
+  })
 }
 </script>
 
@@ -384,7 +453,6 @@ button {
   opacity: 0.7;
 }
 
-/* 新增的危险区域样式 */
 .danger-section {
   background-color: #fff8f8;
   border-radius: 8px;
@@ -435,13 +503,6 @@ button {
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
-h3 {
-  margin-top: 0;
-  color: #333;
-  border-bottom: 1px solid #eee;
-  padding-bottom: 10px;
-}
-
 .odds-input-group {
   display: flex;
   flex-direction: column;
@@ -457,15 +518,6 @@ h3 {
 .odds-input label {
   min-width: 80px;
   font-weight: 500;
-}
-
-.odds-input-field {
-  flex: 1;
-  max-width: 120px;
-}
-
-.odds-suffix {
-  color: #666;
 }
 
 .save-button {
