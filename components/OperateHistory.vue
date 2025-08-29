@@ -3,73 +3,125 @@
     <div class="filter-section">
       <var-select v-model="filterType" placeholder="筛选操作类型" class="filter-select" variant="outlined" size="small">
         <var-option label="全部" value="all" />
-        <var-option label="批量下注" value="more" />
-        <var-option label="下注" value="bet" />
-        <var-option label="减注" value="reduce" />
-        <var-option label="包生肖" value="zodiac" />
-        <var-option label="赔率设置" value="odds" />
-        <var-option label="号码设置" value="numbers" />
+        <var-option label="直选" value="direct" />
+        <var-option label="尾数" value="tail" />
+        <var-option label="生肖" value="zodiac" />
+        <var-option label="撤销" value="undo" />
+        <var-option label="场次设置" value="setting" />
       </var-select>
+
+
     </div>
 
     <var-list v-model:loading="loading" :finished="finished" @load="loadMore" class="history-list">
-      <var-cell v-for="(record, index) in filteredRecords" :key="index" class="history-item"
-        :class="`type-${record.type}`">
-        <div class="record-card">
-          <div class="record-header">
-            <div class="type-badge">
-              <var-chip :type="getChipType(record.type)" size="small" round>
-                {{ getTypeText(record.type) }}
-              </var-chip>
-            </div>
-            <div class="record-time">
-              <var-icon name="clock-time-four-outline" size="16" />
-              <span class="time-text">{{ formatTime(record.time) }}</span>
-            </div>
-          </div>
-
-          <div class="record-content">
-            <div class="main-info">
-              <div class="description">
-                {{ record.description }}
+      <transition-group name="list" tag="div">
+        <var-cell v-for="(record, index) in filteredRecords" :key="record.id || index" class="history-item">
+          <div class="record-card" :class="`type-${getRecordType(record)}`" @click="toggleDetails(index)">
+            <div class="record-header">
+              <div class="type-badge">
+                <var-chip :type="getChipType(getRecordType(record))" size="small" round :outline="record.isUndo">
+                  {{ getTypeText(record) }}
+                </var-chip>
               </div>
-
-              <div class="amount-display" v-if="record.details.amount">
-                <span class="amount-label">总金额:</span>
-                <span class="amount-value" :class="record.type">
-                  {{ calculateTotalAmount(record) }}
-                </span>
+              <div class="record-time">
+                <var-icon name="clock-time-four-outline" size="16" />
+                <span class="time-text">{{ formatTime(record.timestamp || Date.now()) }}</span>
               </div>
             </div>
 
-            <div class="record-details">
-              <div class="detail-row" v-if="record.details.numbers?.length">
-                <var-icon name="numeric" size="16" />
-                <span class="detail-label">号码:</span>
-                <div class="number-bubbles">
-                  <span class="number-bubble" v-for="(num, i) in record.details.numbers" :key="i">
-                    {{ num }}
+            <div class="record-content">
+              <div class="main-info">
+                <div class="description">
+                  {{ record.description || getBetDescription(record) }}
+                </div>
+                <div class="amount-display" v-if="hasAmount(record)">
+                  <span class="amount-label">单注金额</span>
+                  <span class="amount-value" style="color: tan;">
+                    {{ Math.abs(record.betCount || 0) }}
+                  </span>
+                  &nbsp;&nbsp;&nbsp;&nbsp;
+                  <span class="amount-label"> 总金额</span>
+                  <span class="amount-value" :class="getRecordType(record)">
+                    ¥{{ Math.abs(record.betCount || 0) * (record.numbers?.length || 1) }}
                   </span>
                 </div>
               </div>
 
-              <div class="detail-row" v-if="record.details.zodiac">
-                <var-icon name="zodiac-rat" size="16" />
-                <span class="detail-label">生肖:</span>
-                <span class="detail-value">{{ record.details.zodiac }}</span>
+              <div class="record-details" :class="{ 'expanded': isExpanded(index) }">
+                <div class="details-content">
+                  <template v-if="record.type === 'name'">
+                    <div class="detail-row">
+                      <var-icon name="form-textbox" size="16" />
+                      <span class="detail-label">原名称:</span>
+                      <span class="detail-value">{{ record.details.oldName }}</span>
+                    </div>
+                    <div class="detail-row">
+                      <var-icon name="form-textbox" size="16" />
+                      <span class="detail-label">新名称:</span>
+                      <span class="detail-value">{{ record.details.newName }}</span>
+                    </div>
+                  </template>
+
+                  <template v-else-if="record.type === 'zhongjiang'">
+                    <div class="detail-row">
+                      <var-icon name="numeric" size="16" />
+                      <span class="detail-label">平码:</span>
+                      <div class="number-bubbles">
+                        <template v-if="record.details.oldPingMa?.length">
+                          <span class="number-bubble" v-for="(num, i) in record.details.oldPingMa" :key="i">
+                            {{ num }}
+                          </span>
+                        </template>
+                        <span v-else>无</span>
+                        <var-icon name="chevron-right" :size="20" />
+                        <span class="number-bubble" v-for="(num, i) in record.details.newPingMa" :key="i">
+                          {{ num }}
+                        </span>
+                      </div>
+                    </div>
+                    <div class="detail-row">
+                      <var-icon name="numeric" size="16" />
+                      <span class="detail-label">特码:</span>
+                      <span class="detail-value">{{ record.details.oldTeMa || '无' }}</span>
+                      <var-icon name="arrow-right" size="16" />
+                      <span class="detail-value">{{ record.details.newTeMa }}</span>
+                    </div>
+                  </template>
+
+                  <template v-else>
+                    <div class="detail-row" v-if="record.numbers?.length">
+                      <var-icon name="numeric" size="16" />
+                      <span class="detail-label">号码:</span>
+                      <div class="number-bubbles">
+                        <span class="number-bubble" v-for="(num, i) in record.numbers" :key="i" :class="{
+                          'red': num % 2 === 1,
+                          'blue': num % 2 === 0
+                        }">
+                          {{ num }}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div class="detail-row" v-if="record.betTarget">
+                      <var-icon :name="getTargetIcon(record.betType)" size="16" />
+                      <span class="detail-label">{{ getTargetLabel(record.betType) }}:</span>
+                      <span class="detail-value">{{ record.betTarget }}</span>
+                    </div>
+                  </template>
+                </div>
               </div>
             </div>
           </div>
-        </div>
-      </var-cell>
+        </var-cell>
+      </transition-group>
     </var-list>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
-import { useMainStore } from '@/stores/mainStore'
 import dayjs from 'dayjs'
+import type { OperationRecord } from '~/types/zodiac'
 
 const store = useMainStore()
 
@@ -78,7 +130,22 @@ const loading = ref(false)
 const finished = ref(false)
 const page = ref(1)
 const pageSize = 20
+const expandedIndex = ref<number | null>(null)
+
 const allRecords = ref<OperationRecord[]>([])
+
+// 默认展开所有卡片
+const isExpanded = (index: number) => {
+  return expandedIndex.value === null || expandedIndex.value === index
+}
+
+const filteredRecords = computed(() => {
+  if (filterType.value === 'all') return allRecords.value
+  if (filterType.value === 'undo') return allRecords.value.filter(r => r.isUndo)
+  if (filterType.value === 'setting') return allRecords.value.filter(r => ['name', 'beilv', 'zhongjiang'].includes(r.type))
+  return allRecords.value.filter(r => r.betType === filterType.value && !r.isUndo)
+})
+
 
 onMounted(() => {
   loadRecords()
@@ -86,14 +153,9 @@ onMounted(() => {
 
 const loadRecords = () => {
   if (store.currentChangCi?.operateHistory) {
-    allRecords.value = store.currentChangCi.operateHistory
+    allRecords.value = [...store.currentChangCi.operateHistory]
   }
 }
-
-const filteredRecords = computed(() => {
-  if (filterType.value === 'all') return allRecords.value
-  return allRecords.value.filter(r => r.type === filterType.value)
-})
 
 const loadMore = () => {
   setTimeout(() => {
@@ -106,49 +168,16 @@ const loadMore = () => {
   }, 500)
 }
 
-const getChipType = (type: string) => {
-  switch (type) {
-    case 'more':
-      return 'primary'
-    case 'bet':
-      return 'primary'
-    case 'reduce':
-      return 'danger'
-    case 'zodiac':
-      return 'success'
-    case 'odds':
-      return 'warning'
-    case 'numbers':
-      return 'info'
-    default:
-      return ''
-  }
+const toggleDetails = (index: number) => {
+  expandedIndex.value = expandedIndex.value === index ? null : index
 }
 
-const getTypeText = (type: string) => {
-  switch (type) {
-    case 'more':
-      return '批量下注'
-    case 'bet':
-      return '下注'
-    case 'reduce':
-      return '减注'
-    case 'zodiac':
-      return '包生肖'
-    case 'odds':
-      return '赔率设置'
-    case 'numbers':
-      return '号码设置'
-    default:
-      return ''
-  }
-}
-
-const formatTime = (time: Date) => {
-  const formattedTime = dayjs(time).format('MM-DD HH:mm:ss')
+const formatTime = (timestamp: number) => {
+  const date = new Date(timestamp)
+  const formattedTime = dayjs(date).format('MM-DD HH:mm:ss')
   const now = dayjs()
-  const diffInMinutes = now.diff(time, 'minute')
-  
+  const diffInMinutes = now.diff(date, 'minute')
+
   let relativeTime = ''
   if (diffInMinutes < 1) {
     relativeTime = '刚刚'
@@ -159,58 +188,170 @@ const formatTime = (time: Date) => {
   } else {
     relativeTime = `${Math.floor(diffInMinutes / 1440)}天前`
   }
-  
+
   return `${formattedTime} (${relativeTime})`
 }
 
-const calculateTotalAmount = (record: OperationRecord) => {
-  if (!record.details.amount) return 0
-  const numberCount = record.details.numbers?.length || 1
-  return record.details.amount * numberCount
+const getBetDescription = (record: any) => {
+  if (record.isUndo) {
+    return `撤销 ${getOriginalBetDescription(record)}`
+  }
+
+  switch (record.betType) {
+    case 'direct':
+      return `直选号码 ${record.numbers?.join(', ')}`
+    case 'tail':
+      return `尾数 ${record.betTarget} 的所有号码`
+    case 'zodiac':
+      return `生肖 ${record.betTarget} 的所有号码`
+    default:
+      return record.description || '操作记录'
+  }
 }
 
-interface OperationRecord {
-  type: 'more' | 'bet' | 'reduce' | 'zodiac' | 'odds' | 'numbers' | 'changci'
-  typeText: string
-  title: string
-  description?: string
-  time: Date
-  details: {
-    numbers?: string[]
-    amount?: number
-    zodiac?: string
-    pingMa?: number
-    teMa?: number | string
-    oldPingMa?: number
-    oldTeMa?: number | string
-    pingMaList?: string[]
-    changciId?: number
-    changciName?: string
-    operator?: string
-    oldPingMaList?: string[]
+const getOriginalBetDescription = (record: any) => {
+  switch (record.betType) {
+    case 'direct':
+      return `直选号码 ${record.numbers?.join(', ')}`
+    case 'tail':
+      return `尾数 ${record.betTarget} 的所有号码`
+    case 'zodiac':
+      return `生肖 ${record.betTarget} 的所有号码`
+    default:
+      return '操作'
   }
+}
+
+const getRecordType = (record: any) => {
+  if (record.isUndo) return 'undo'
+  if (record.betType) return record.betType
+  return record.type || 'setting'
+}
+
+const getTypeText = (record: any) => {
+  if (record.typeText) return record.typeText
+  return getBetTypeText(getRecordType(record))
+}
+
+const getBetTypeText = (type: string) => {
+  switch (type) {
+    case 'direct':
+      return '直选'
+    case 'tail':
+      return '尾数'
+    case 'zodiac':
+      return '生肖'
+    case 'undo':
+      return '撤销'
+    case 'name':
+      return '场次名称'
+    case 'beilv':
+      return '赔率设置'
+    case 'zhongjiang':
+      return '中奖号码'
+    default:
+      return type
+  }
+}
+
+const getChipType = (type: string) => {
+  switch (type) {
+    case 'direct':
+      return 'primary'
+    case 'tail':
+      return 'warning'
+    case 'zodiac':
+      return 'success'
+    case 'undo':
+      return 'danger'
+    case 'name':
+      return 'info'
+    case 'beilv':
+      return 'info'
+    case 'zhongjiang':
+      return 'info'
+    default:
+      return ''
+  }
+}
+
+const getTargetIcon = (type: string) => {
+  switch (type) {
+    case 'tail':
+      return 'sort-numeric-descending'
+    case 'zodiac':
+      return 'zodiac-rat'
+    case 'undo':
+      return 'undo'
+    default:
+      return 'information'
+  }
+}
+
+const getTargetLabel = (type: string) => {
+  switch (type) {
+    case 'tail':
+      return '尾数'
+    case 'zodiac':
+      return '生肖'
+    case 'undo':
+      return '撤销'
+    default:
+      return '目标'
+  }
+}
+
+// 判断记录是否有金额
+const hasAmount = (record: any) => {
+  return record.betCount !== undefined && record.betCount !== null
 }
 </script>
 
 <style scoped>
 .operate-history-container {
   padding: 0 12px 20px;
-  background-color: #f8f9fa;
+  background-color: #f8fafc;
   min-height: 100vh;
 }
 
 .filter-section {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
   padding: 16px 0;
-  position: sticky;
   top: 0;
-  background-color: #f8f9fa;
-  z-index: 1;
+  background-color: #f8fafc;
+  z-index: 10;
 }
 
 .filter-select {
   background-color: white;
-  border-radius: 8px;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+  border-radius: 12px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+  border: 1px solid #e2e8f0;
+  flex: 1;
+  max-width: 200px;
+}
+
+.total-amount {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background-color: white;
+  padding: 8px 12px;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.total-label {
+  font-size: 14px;
+  color: #64748b;
+}
+
+.total-value {
+  font-weight: bold;
+  font-size: 16px;
+  color: var(--color-primary);
 }
 
 .history-list {
@@ -221,17 +362,57 @@ interface OperationRecord {
   padding: 8px 0;
 }
 
+.list-enter-active,
+.list-leave-active {
+  transition: all 0.5s ease;
+}
+
+.list-enter-from,
+.list-leave-to {
+  opacity: 0;
+  transform: translateY(30px);
+}
+
 .record-card {
   background-color: white;
-  border-radius: 12px;
+  border-radius: 14px;
   padding: 16px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-  transition: transform 0.2s, box-shadow 0.2s;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+  border-left: 4px solid var(--color-primary);
+  cursor: pointer;
+  overflow: hidden;
+}
+
+.record-card.type-tail {
+  border-left-color: var(--color-warning);
+}
+
+.record-card.type-zodiac {
+  border-left-color: var(--color-success);
+}
+
+.record-card.type-undo {
+  border-left-color: var(--color-danger);
+  background-color: rgba(239, 68, 68, 0.05);
+}
+
+.record-card.type-name {
+  border-left-color: var(--color-info);
+}
+
+.record-card.type-beilv {
+  border-left-color: var(--color-primary);
+}
+
+.record-card.type-zhongjiang {
+  border-left-color: var(--color-success);
+  background-color: rgba(16, 185, 129, 0.05);
 }
 
 .record-card:hover {
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.1);
 }
 
 .record-header {
@@ -240,19 +421,19 @@ interface OperationRecord {
   align-items: center;
   margin-bottom: 12px;
   padding-bottom: 8px;
-  border-bottom: 1px solid #f0f0f0;
+  border-bottom: 1px solid #f1f5f9;
 }
 
 .record-time {
   display: flex;
   align-items: center;
   gap: 6px;
-  font-size: 14px;
-  color: #666;
+  font-size: 13px;
+  color: #64748b;
 }
 
 .time-text {
-  font-size: 14px;
+  font-size: 13px;
 }
 
 .record-content {
@@ -270,7 +451,7 @@ interface OperationRecord {
 .description {
   font-weight: 500;
   font-size: 15px;
-  color: #333;
+  color: #1e293b;
   flex: 1;
   margin-right: 12px;
 }
@@ -278,92 +459,125 @@ interface OperationRecord {
 .amount-display {
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 6px;
 }
 
 .amount-label {
   font-size: 12px;
-  color: #666;
+  color: #64748b;
 }
 
 .amount-value {
   font-weight: bold;
   font-size: 16px;
 }
-.amount-value.more {
+
+.amount-value.direct {
   color: var(--color-primary);
 }
 
-.amount-value.bet {
-  color: var(--color-primary);
-}
-
-.amount-value.reduce {
-  color: var(--color-danger);
+.amount-value.tail {
+  color: var(--color-warning);
 }
 
 .amount-value.zodiac {
   color: var(--color-success);
 }
 
+.amount-value.undo {
+  color: var(--color-danger);
+}
+
 .record-details {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  font-size: 13px;
+  max-height: 500px;
+  /* 默认展开 */
+  overflow: hidden;
+  transition: max-height 0.3s ease-out;
+}
+
+.record-details:not(.expanded) {
+  max-height: 0;
+  transition: max-height 0.3s ease-out;
+}
+
+.details-content {
+  padding-top: 8px;
+  border-top: 1px dashed #e2e8f0;
 }
 
 .detail-row {
   display: flex;
   align-items: center;
   gap: 8px;
+  margin-bottom: 8px;
 }
 
 .detail-label {
-  color: #666;
+  color: #64748b;
+  font-size: 13px;
+  min-width: 60px;
 }
 
 .detail-value {
-  color: #333;
+  color: #1e293b;
   font-weight: 500;
+  font-size: 13px;
 }
 
 .number-bubbles {
   display: flex;
   flex-wrap: wrap;
+  align-items: center;
   gap: 6px;
 }
 
 .number-bubble {
-  background-color: #f0f0f0;
+  background-color: #f1f5f9;
   padding: 4px 10px;
   border-radius: 12px;
   font-size: 12px;
-  color: #333;
+  color: #1e293b;
+  font-weight: 500;
+  transition: all 0.2s;
 }
 
-/* 不同类型卡片样式 */
-.type-more .record-card {
-  border-left: 4px solid var(--color-primary);
+.number-bubble.red {
+  background-color: #fee2e2;
+  color: #b91c1c;
 }
 
-.type-bet .record-card {
-  border-left: 4px solid var(--color-primary);
+.number-bubble.blue {
+  background-color: #dbeafe;
+  color: #1d4ed8;
 }
 
-.type-reduce .record-card {
-  border-left: 4px solid var(--color-danger);
-}
+@media (max-width: 600px) {
+  .filter-section {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+  }
 
-.type-zodiac .record-card {
-  border-left: 4px solid var(--color-success);
-}
+  .filter-select {
+    max-width: 100%;
+  }
 
-.type-odds .record-card {
-  border-left: 4px solid var(--color-warning);
-}
+  .total-amount {
+    align-self: flex-end;
+  }
 
-.type-numbers .record-card {
-  border-left: 4px solid var(--color-info);
+  .main-info {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .amount-display {
+    align-self: flex-end;
+  }
+
+  .time-text {
+    font-size: 12px;
+  }
 }
 </style>

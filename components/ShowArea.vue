@@ -5,10 +5,51 @@
                 <var-option label="默认排序" value="number" />
                 <var-option label="按金额排序" value="total" />
             </var-select>
+            
+            <var-select v-model="filterType" placeholder="筛选类型" class="filter-select" variant="outlined" size="small">
+                <var-option label="全部" value="all" />
+                <var-option label="平码" value="ping" />
+                <var-option label="特码" value="te" />
+                <var-option label="普通号码" value="normal" />
+            </var-select>
+            
+            <var-button size="small" @click="exportData">导出数据</var-button>
+        </div>
+
+        <div class="stats-section">
+            <div class="stat-card total">
+                <div class="stat-title">总金额</div>
+                <div class="stat-number">{{ amountStats.total }}</div>
+            </div>
+            
+            <div class="stat-card highest">
+                <div class="stat-title">最高金额</div>
+                <div class="stat-number">{{ amountStats.highest }}</div>
+            </div>
+            
+            <div class="stat-card count-5000">
+                <div class="stat-title">≥5000</div>
+                <div class="stat-number">{{ amountStats.count5000 }}</div>
+            </div>
+            
+            <div class="stat-card count-2000">
+                <div class="stat-title">≥2000</div>
+                <div class="stat-number">{{ amountStats.count2000 }}</div>
+            </div>
+            
+            <div class="stat-card count-1000">
+                <div class="stat-title">≥1000</div>
+                <div class="stat-number">{{ amountStats.count1000 }}</div>
+            </div>
+            
+            <div class="stat-card count-500">
+                <div class="stat-title">≥500</div>
+                <div class="stat-number">{{ amountStats.count500 }}</div>
+            </div>
         </div>
 
         <div class="zodiac-grid">
-            <div v-for="item in sortedData" :key="item.number" class="zodiac-card" 
+            <div v-for="item in filteredData" :key="item.number" class="zodiac-card" 
                  :class="[getAmountClass(item.total), getZodiacTypeClass(item.number)]">
                 <div class="zodiac-header">
                     <span class="zodiac-number">{{ item.number }}</span>
@@ -30,12 +71,12 @@ import { ref, computed } from 'vue'
 const store = useMainStore()
 
 const zodiacData = computed(() => store.currentZodiacData)
-
 const pingMa = ref(store.currentChangCi?.pingMaList || [])
 const teMa = ref(store.currentChangCi?.teMa || '')
 
-// 排序字段
+// 排序和筛选
 const sortField = ref<'number' | 'total'>('number')
+const filterType = ref<'all' | 'ping' | 'te' | 'normal'>('all')
 
 // 排序后的数据
 const sortedData = computed(() => {
@@ -51,6 +92,58 @@ const sortedData = computed(() => {
     }
 })
 
+// 筛选后的数据
+const filteredData = computed(() => {
+    if (filterType.value === 'all') return sortedData.value
+    if (filterType.value === 'ping') return sortedData.value.filter(item => pingMa.value.includes(item.number))
+    if (filterType.value === 'te') return sortedData.value.filter(item => teMa.value === item.number)
+    return sortedData.value.filter(item => !pingMa.value.includes(item.number) && teMa.value !== item.number)
+})
+
+// 金额统计
+const amountStats = computed(() => {
+    const stats = {
+        total: '0',
+        highest: '0',
+        count5000: 0,
+        count2000: 0,
+        count1000: 0,
+        count500: 0
+    }
+    
+    if (filteredData.value.length > 0) {
+        const totals = filteredData.value.map(item => item.total)
+        stats.total = totals.reduce((a, b) => a + b, 0).toLocaleString('zh-CN')
+        stats.highest = Math.max(...totals).toLocaleString('zh-CN')
+        stats.count5000 = totals.filter(t => t >= 5000).length
+        stats.count2000 = totals.filter(t => t >= 2000).length
+        stats.count1000 = totals.filter(t => t >= 1000).length
+        stats.count500 = totals.filter(t => t >= 500).length
+    }
+    
+    return stats
+})
+
+// 导出数据
+function exportData() {
+    const headers = ['号码', '生肖', '金额']
+    const csvContent = [
+        headers.join(','),
+        ...filteredData.value.map(item => 
+            [item.number, item.name, item.total].join(',')
+        )
+    ].join('\n')
+    
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.setAttribute('download', `${store.currentChangCi.name}_数据_${new Date().toLocaleString()}.csv`)
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+}
+
 // 格式化金额显示
 const formatAmount = (amount: number) => {
     return amount.toLocaleString('zh-CN')
@@ -58,10 +151,10 @@ const formatAmount = (amount: number) => {
 
 // 根据金额获取样式类
 const getAmountClass = (amount: number) => {
-    if (amount >= 3000) return 'amount-super-high'
-    if (amount >= 1000) return 'amount-high'
-    if (amount >= 500) return 'amount-medium'
-    if (amount >= 200) return 'amount-low'
+    if (amount >= 5000) return 'amount-super-high'
+    if (amount >= 2000) return 'amount-high'
+    if (amount >= 1000) return 'amount-medium'
+    if (amount >= 500) return 'amount-low'
     return 'amount-default'
 }
 
@@ -84,10 +177,74 @@ const getZodiacTypeClass = (number: string) => {
     margin-bottom: 15px;
     display: flex;
     justify-content: flex-end;
+    gap: 10px;
+    flex-wrap: wrap;
 }
 
 .filter-select {
     width: 150px;
+}
+
+.stats-section {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+    gap: 12px;
+    margin-bottom: 20px;
+}
+
+.stat-card {
+    background: white;
+    border-radius: 10px;
+    padding: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    text-align: center;
+    transition: transform 0.2s;
+}
+
+.stat-card:hover {
+    transform: translateY(-2px);
+}
+
+.stat-title {
+    font-size: 13px;
+    color: #666;
+    margin-bottom: 6px;
+}
+
+.stat-number {
+    font-weight: bold;
+    font-size: 18px;
+}
+
+/* 统计卡片颜色 */
+.stat-card.total {
+    background: linear-gradient(135deg, #f0f9ff, #e0f2fe);
+    border-left: 4px solid #0369a1;
+}
+
+.stat-card.highest {
+    background: linear-gradient(135deg, #fff1f2, #ffe4e6);
+    border-left: 4px solid #be123c;
+}
+
+.stat-card.count-5000 {
+    background: linear-gradient(135deg, #f5f3ff, #ede9fe);
+    border-left: 4px solid #6d28d9;
+}
+
+.stat-card.count-2000 {
+    background: linear-gradient(135deg, #ecfdf5, #d1fae5);
+    border-left: 4px solid #047857;
+}
+
+.stat-card.count-1000 {
+    background: linear-gradient(135deg, #fffbeb, #fef3c7);
+    border-left: 4px solid #b45309;
+}
+
+.stat-card.count-500 {
+    background: linear-gradient(135deg, #f3f4f6, #e5e7eb);
+    border-left: 4px solid #4b5563;
 }
 
 .zodiac-grid {
@@ -101,6 +258,11 @@ const getZodiacTypeClass = (number: string) => {
     border-radius: 8px;
     padding: 12px;
     box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+    transition: transform 0.2s;
+}
+
+.zodiac-card:hover {
+    transform: translateY(-2px);
 }
 
 .zodiac-header {
@@ -140,7 +302,6 @@ const getZodiacTypeClass = (number: string) => {
     font-weight: 600;
     font-size: 16px;
 }
-
 
 /* 金额颜色分类和大小变化 */
 .amount-default .value {
@@ -189,6 +350,10 @@ const getZodiacTypeClass = (number: string) => {
         padding: 10px;
     }
     
+    .stats-section {
+        grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+    }
+    
     /* 响应式调整字体大小 */
     .amount-default .value {
         font-size: 14px;
@@ -225,6 +390,22 @@ const getZodiacTypeClass = (number: string) => {
         font-size: 11px;
     }
     
+    .stats-section {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    
+    .stat-card {
+        padding: 10px;
+    }
+    
+    .stat-title {
+        font-size: 12px;
+    }
+    
+    .stat-number {
+        font-size: 16px;
+    }
+    
     /* 响应式调整字体大小 */
     .amount-default .value {
         font-size: 12px;
@@ -245,6 +426,13 @@ const getZodiacTypeClass = (number: string) => {
     .amount-super-high .value {
         font-size: 20px;
     }
+    
+    .filter-section {
+        justify-content: flex-start;
+    }
+    
+    .filter-select {
+        width: 120px;
+    }
 }
 </style>
-

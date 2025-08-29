@@ -21,7 +21,7 @@
             <var-icon name="menu" :size="24" />
           </var-button>
           <template #menu>
-            <var-cell @click="changeNameShow = true" ripple>修改成次名</var-cell>
+            <var-cell @click="changeNameShow = true" ripple>修改场次名称</var-cell>
             <var-cell @click="beilvShow = true" ripple>设置中奖赔率</var-cell>
             <var-cell @click="zhongjiangShow = true" ripple>设置中奖号码</var-cell>
             <var-cell @click="createShow = true" ripple>创建新场次</var-cell>
@@ -45,10 +45,11 @@
         </div>
         <var-tabs style="margin-top: 5px" color="transparent" active-color="#fff" inactive-color="#ddd"
           v-model:active="active">
-          <var-tab>展示图</var-tab>
+          <var-tab>数据展示</var-tab>
           <var-tab>加注操作</var-tab>
-          <var-tab>按生效排序</var-tab>
-          <var-tab>按数字排序</var-tab>
+          <!-- <var-tab>点击加注</var-tab> -->
+          <!-- <var-tab>按生效排序</var-tab>
+          <var-tab>按数字排序</var-tab> -->
           <var-tab>历史操作</var-tab>
 
 
@@ -59,20 +60,24 @@
   <div v-if="active === 0">
     <ShowArea></ShowArea>
   </div>
-  <div v-if="active === 2">
+  <!-- <div v-if="active === 2">
     <SortByZodiac></SortByZodiac>
   </div>
   <div v-else-if="active === 3">
     <SortByNumbers></SortByNumbers>
-  </div>
+  </div> -->
   <div v-else-if="active === 1">
     <OperationArea></OperationArea>
   </div>
-  <div v-else-if="active === 4">
+  <!-- <div v-else-if="active === 2">
+    <ClickAddArea></ClickAddArea>
+  </div>
+   -->
+  <div v-else-if="active === 2">
     <OperateHistory></OperateHistory>
   </div>
 
-  <!--修改成次名称 -->
+  <!--修改场次名称 -->
   <var-overlay v-model:show="changeNameShow">
     <div class="overlay-content">
       <div style="padding:20px">
@@ -193,6 +198,7 @@ function clickCreate() {
   clickReset()
   refreshData()
 }
+//修改名称
 function clickChange() {
   if (!newChangciName.value.trim()) {
     Snackbar.error('请输入场次名称')
@@ -202,6 +208,19 @@ function clickChange() {
     Snackbar.warning('名称未更改，无需更新')
     return
   }
+  const tmp = {
+    type: 'name',
+    typeText: '场次名称',
+    title: '修改场次名称',
+    timestamp: Date.now(),
+    description: `将场次名称由 "${store.currentChangCi.name}" 修改为 "${newChangciName.value.trim()}"`,
+    details: {
+      oldName: store.currentChangCi.name,
+      newName: newChangciName.value.trim(),
+      operator: '管理员'
+    }
+  }
+  store.addOperationRecord(tmp)
   store.updateChangCiName(newChangciName.value.trim())
   Snackbar.success('修改成功')
   changeNameShow.value = false
@@ -213,8 +232,25 @@ function updateBeilvImmediately() {
   if (!store.currentChangCi) return
   // 防抖处理，避免频繁更新
   debounce(() => {
-    store.updateBeilv(pingMaBeilv.value, teMaBeilv.value)
     Snackbar.success('赔率已更新')
+    const tmp = {
+      type: 'beilv',
+      typeText: '赔率设置',
+      title: '修改赔率',
+      timestamp: Date.now(),
+      description: `将赔率由 "平码: ${store.currentChangCi.pingMaBeilv}，特码: ${store.currentChangCi.teMaBeilv}" 修改为 "平码: ${pingMaBeilv.value}，特码: ${teMaBeilv.value}"`,
+      details: {
+        oldPingMaBeilv: store.currentChangCi.pingMaBeilv,
+        oldTeMaBeilv: store.currentChangCi.teMaBeilv,
+        newPingMaBeilv: pingMaBeilv.value,
+        newTeMaBeilv: teMaBeilv.value,
+        operator: '管理员'
+      }
+    }
+    console.log(tmp)
+    store.addOperationRecord(tmp)
+    store.updateBeilv(pingMaBeilv.value, teMaBeilv.value)
+
   }, 1000)()
 }
 
@@ -262,7 +298,7 @@ function clickReset() {
 
   Snackbar.success('已重置所有选择')
   store.updateWinningNumbers()
-  
+
 }
 
 // 确定按钮点击事件
@@ -297,21 +333,21 @@ async function clickConfirm() {
     // 更新中奖号码
     store.currentChangCi.pingMaList = currentPingMa
     store.currentChangCi.teMa = currentTeMa
-
-    // 添加操作记录
-    store.addOperationRecord({
-      type: 'numbers',
-      typeText: '号码设置',
-      title: '更新中奖号码',
-      description: `${pingMaChanged ? `平码: ${oldPingMa.join(', ') || '无'} → ${currentPingMa.join(', ')}` : ''}${pingMaChanged && teMaChanged ? ' | ' : ''}${teMaChanged ? `特码: ${oldTeMa || '无'} → ${currentTeMa}` : ''}`.trim(),
+    const tmp = {
+      type: 'zhongjiang',
+      typeText: '中奖号码',
+      title: '修改中奖号码',
+      timestamp: Date.now(),
+      description: `将中奖号码由 "平码: [${oldPingMa.join(', ')}]->[${currentPingMa.join(', ')}]，特码: ${oldTeMa}-> 特码: ${currentTeMa}`,
       details: {
-        pingMaList: currentPingMa,
-        teMa: currentTeMa,
-        oldPingMaList: pingMaChanged ? oldPingMa : undefined,
-        oldTeMa: teMaChanged ? oldTeMa : undefined,
+        oldPingMa: oldPingMa,
+        oldTeMa: oldTeMa,
+        newPingMa: currentPingMa,
+        newTeMa: currentTeMa,
         operator: '管理员'
       }
-    })
+    }
+    store.addOperationRecord(tmp)
 
     Snackbar.success('保存成功！')
     store.updateWinningNumbers()

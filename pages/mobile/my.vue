@@ -1,5 +1,6 @@
 <template>
   <div class="import-export-container">
+    <!-- 赔率设置-->
     <div class="odds-settings-container">
       <h3>默认赔率设置</h3>
 
@@ -18,19 +19,25 @@
       </div>
       <p class="hint-text">设置后，新创建的场次将使用这些默认赔率</p>
     </div>
-
-    <!-- 导出所有场次 -->
+    <!-- 远程维护LocalStorage 数据 -->
     <div class="export-section">
-      <h3>导出所有场次数据</h3>
+      <h3>远程维护LocalStorage 数据</h3>
       <div class="export-actions">
         <button class="export-button" @click="copyToClipboard">
           <span class="button-icon">📋</span> 复制到剪贴板
         </button>
-        <button class="export-button" @click="showExportData">
+        <button class="export-button" @click="showLocalStorageData">
           <span class="button-icon">👀</span> 查看数据
         </button>
+        <button class="export-button" @click="exportLocalStorageToFile">
+          <span class="button-icon">💾</span> 导出数据到文件
+        </button>
+        <button class="export-button" @click="loadStorageFromFile">
+          <span class="button-icon">🔄</span> 从文件加载数据
+        </button>
       </div>
-      <textarea v-if="showExport" v-model="exportData" readonly class="data-preview"></textarea>
+      <textarea v-if="showLocalStorageExport" v-model="localStorageData" readonly class="data-preview"></textarea>
+      <p class="hint-text">将当前 LocalStorage 数据导出为 JSON 文件，便于备份或迁移。</p>
     </div>
 
     <!-- 导入场次数据 -->
@@ -64,20 +71,7 @@
       <p class="danger-hint">此操作不可撤销，请谨慎操作！</p>
     </div>
 
-    <!-- 导出 LocalStorage 数据 -->
-    <div class="export-section">
-      <h3>导出 LocalStorage 数据</h3>
-      <div class="export-actions">
-        <button class="export-button" @click="exportLocalStorageToFile">
-          <span class="button-icon">💾</span> 导出数据到文件
-        </button>
-        <button class="export-button" @click="showLocalStorageData">
-          <span class="button-icon">👀</span> 查看数据
-        </button>
-      </div>
-      <textarea v-if="showLocalStorageExport" v-model="localStorageData" readonly class="data-preview"></textarea>
-      <p class="hint-text">将当前 LocalStorage 数据导出为 JSON 文件，便于备份或迁移。</p>
-    </div>
+
 
     <!-- 导入 LocalStorage 数据 -->
     <div class="import-section">
@@ -93,13 +87,8 @@
       <button class="import-button" @click="triggerFileInput">
         <span class="button-icon">📂</span> 从文件导入数据
       </button>
-      <input 
-        ref="fileInput"
-        type="file" 
-        accept=".json" 
-        style="display: none" 
-        @change="handleFileImport"
-      />
+
+      <input ref="fileInput" type="file" accept=".json" style="display: none" @change="handleFileImport" />
       <p class="hint-text">选择之前导出的 JSON 文件，将数据导入到 LocalStorage。</p>
     </div>
   </div>
@@ -246,32 +235,17 @@ const showLocalStorageData = () => {
   showLocalStorageExport.value = !showLocalStorageExport.value
 }
 
-// 导出 LocalStorage 数据到文件
-const exportLocalStorageToFile = () => {
-  const data: Record<string, any> = {}
-  for (let i = 0; i < localStorage.length; i++) {
-    const key = localStorage.key(i)
-    if (key) {
-      try {
-        data[key] = JSON.parse(localStorage.getItem(key) || 'null')
-      } catch {
-        data[key] = localStorage.getItem(key)
-      }
-    }
-  }
+const exportLocalStorageToFile = async () => {
+  const confirmed = await Dialog({
+    title: '确认导出',
+    message: `确定导出LocalStorage 数据覆盖文件吗？`,
+    confirmButtonText: '确定',
+    cancelButtonText: '取消',
+  })
 
-  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' })
-  const url = URL.createObjectURL(blob)
-  
-  const a = document.createElement('a')
-  a.href = url
-  a.download = `localstorage_backup_${new Date().toISOString().slice(0, 10)}.json`
-  document.body.appendChild(a)
-  a.click()
-  document.body.removeChild(a)
-  
-  URL.revokeObjectURL(url)
-  Snackbar.success('导出成功')
+  if (confirmed !== 'confirm') return
+  await syncStorageToFile()
+  Snackbar.success('数据已同步到文件')
 }
 
 // 触发文件选择
@@ -300,7 +274,7 @@ const handleFileImport = async (event: Event) => {
       confirmButtonText: '确定',
       cancelButtonText: '取消',
     })
-    
+
     if (confirmed !== 'confirm') return
 
     const text = await readFileAsText(file)
@@ -345,6 +319,69 @@ const readFileAsText = (file: File): Promise<string> => {
     }
     reader.readAsText(file)
   })
+}
+// 同步数据到文件存储
+const syncStorageToFile = async () => {
+  try {
+    const data: Record<string, any> = {}
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i)
+      if (key) {
+        try {
+          data[key] = JSON.parse(localStorage.getItem(key) || 'null')
+        } catch {
+          data[key] = localStorage.getItem(key)
+        }
+      }
+    }
+
+    const response = await $fetch('/api/storage', {
+      method: 'POST',
+      body: { data }
+    })
+
+    if (response?.success) {
+      console.log('数据同步到文件成功')
+    }
+  } catch (error) {
+    console.error('同步数据到文件失败:', error)
+    Snackbar.error('同步数据到文件失败')
+  }
+}
+
+// 从文件加载数据
+const loadStorageFromFile = async () => {
+  const confirmed = await Dialog({
+    title: '确认导出',
+    message: `确定从文件导入数据覆盖现有的LocalStorage吗？`,
+    confirmButtonText: '确定',
+    cancelButtonText: '取消',
+  })
+
+  if (confirmed !== 'confirm') return
+  try {
+    const data = await $fetch('/api/storage')
+
+    // 合并数据而不是直接替换，避免覆盖用户当前可能有但文件中没有的数据
+    for (const key in data) {
+      if (typeof data[key] === 'object') {
+        localStorage.setItem(key, JSON.stringify(data[key]))
+      } else {
+        localStorage.setItem(key, data[key])
+      }
+    }
+
+    console.log('从文件加载数据成功')
+    Snackbar.success('数据已从文件恢复')
+
+    //延迟刷新让用户看到成功消息
+    setTimeout(() => {
+      window.location.reload()
+    }, 1000)
+  } catch (error) {
+    console.error('从文件加载数据失败:', error)
+    Snackbar.error('从文件加载数据失败')
+  }
 }
 </script>
 

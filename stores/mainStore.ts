@@ -10,7 +10,7 @@ export const useMainStore = defineStore('main', {
         changCiList: [] as ChangCiItem<{}>,
         currentZodiacData: [] as ZodiacDataArray,
         morenPingMaBeiLv: staticPingMaBeiLv,
-        morenTeMaBeiLv: staticTeMaBeiLv
+        morenTeMaBeiLv: staticTeMaBeiLv,
     }),
     getters: {
         // 获取当前场次信息
@@ -39,7 +39,7 @@ export const useMainStore = defineStore('main', {
         //获取特定号码的投注额
         getBetByNumber: (state) => {
             return (number: string) => state.currentZodiacData.find(item => item.number === number)?.total || 0
-        }
+        },
     },
     actions: {
         // 初始化store
@@ -77,7 +77,7 @@ export const useMainStore = defineStore('main', {
             this.currentZodiacData = newChangCi.zodiacData
         },
         //更新场次名称
-        updateChangCiName( newName: string) {
+        updateChangCiName(newName: string) {
             const id = this.currentChangCiId
             const changCi = this.changCiList.find(item => item.id === id)
             if (changCi) {
@@ -95,7 +95,8 @@ export const useMainStore = defineStore('main', {
         },
 
         /**
-         * 更新单个号码的投注额
+         * 废弃
+         * 更新单个号码的投注额   
          * @param number 号码，如 '01'
          * @param amount 要增加的金额（可为负数）
          */
@@ -129,28 +130,20 @@ export const useMainStore = defineStore('main', {
                 this.updateWinningNumbers()
             }
         },
+
+
         /**
-       * 更新多个号码的投注额
-       * @param numbers 号码数组，如 ['01', '04']
-       * @param amount 要增加的金额（可为负数）
-       */
-        updateNumberArrayBet(numbers: string[], amount: number) {
-            // 过滤掉无效号码
-            const validNumbers = numbers.filter(num =>
-                this.currentZodiacData.some(item => item.number === num)
-            )
-
-            if (validNumbers.length === 0) {
-                console.warn('没有找到有效的号码')
-                return
-            }
-
+         * 更新多个号码的投注额（带撤销功能）
+         * @param numbers 号码数组
+         * @param amount 加注金额
+         * @param skipRecord 是否跳过记录（用于撤销/重做时）
+         */
+        updateNumberArrayBet(numbers: string[], amount: number, skipRecord = false) {
             // 记录所有变更
-            const changes = validNumbers.map(number => {
+            const changes = numbers.map(number => {
                 const item = this.currentZodiacData.find(item => item.number === number)!
                 const oldTotal = item.total
                 const zodiacName = item.name
-                // 更新投注额（确保不小于0）
                 item.total = Math.max(0, item.total + amount)
 
                 return {
@@ -163,40 +156,67 @@ export const useMainStore = defineStore('main', {
             })
 
             // 生成操作记录描述
-            const type = 'more'
-            const typeText = '批量下注'
-            const actionText = '加注'
             const absAmount = Math.abs(amount)
 
             // 如果操作多个号码，使用简化的描述
             let description: string
-            if (validNumbers.length <= 3) {
+            if (numbers.length <= 3) {
                 // 数量少时显示具体号码
-                const numberList = validNumbers.map(num => {
+                const numberList = numbers.map(num => {
                     const item = this.currentZodiacData.find(i => i.number === num)!
                     return `${item.name}${num}`
                 }).join('、')
-                description = `${actionText} ${numberList} 号 各${absAmount}元`
+                description = `加注 ${numberList} 号 各${absAmount}元`
             } else {
                 // 数量多时显示统计信息
-                description = `${actionText} ${validNumbers.length}个号码 各${absAmount}元`
+                description = `加注 ${numbers.length}个号码 各${absAmount}元`
             }
-
-            // 添加操作记录
-            this.addOperationRecord({
-                type,
-                typeText,
-                title: '批量下注' ,
-                description,
-                details: {
-                    numbers: validNumbers,
-                    amount,
-                    changes, // 包含所有变更的详细信息
-                    operator: '用户'
-                }
-            })
-
             this.updateWinningNumbers()
+        },
+
+        cancelBet(numbers: string[], betCount: number) {
+            return new Promise<void>((resolve, reject) => {
+                try {
+                    if (!this.currentChangCi) {
+                        throw new Error('当前没有活跃的场次');
+                    }
+
+                    // 遍历号码数组，减去对应的投注额
+                    numbers.forEach(num => {
+                        // 在zodiacData中查找对应的号码
+                        const zodiacItem = this.currentChangCi.zodiacData.find(item => item.number === num);
+                        if (!zodiacItem) {
+                            throw new Error(`号码 ${num} 不存在`);
+                        }
+
+                        // 检查当前投注额是否足够撤销
+                        if (zodiacItem.total < betCount) {
+                            throw new Error(`号码 ${num} 的投注额不足，当前投注额 ${zodiacItem.total}，尝试撤销 ${betCount}`);
+                        }
+
+                        // 减去投注额
+                        zodiacItem.total -= betCount;
+
+                        // 更新总投注额
+                        this.currentChangCi.total -= betCount;
+                    });
+
+                    // 添加撤销操作记录
+                    const undoRecord = {
+                        numbers: [...numbers],
+                        betCount: -betCount, // 使用负数表示撤销
+                        timestamp: Date.now(),
+                        betType: 'undo',
+                        betTarget: '',
+                        totalAmount: -betCount * numbers.length,
+                        isUndo: true
+                    };
+                    this.currentChangCi.operateHistory.unshift(undoRecord);
+                    resolve();
+                } catch (error) {
+                    reject(error);
+                }
+            });
         },
 
         /**
@@ -268,22 +288,27 @@ export const useMainStore = defineStore('main', {
             this.updateWinningNumbers();
         },
         // 添加操作记录
-        addOperationRecord(record: OperationRecord) {
+        addOperationRecord(record: any) {
             if (!this.currentChangCi) return
 
             if (!this.currentChangCi.operateHistory) {
                 this.currentChangCi.operateHistory = []
             }
 
-            this.currentChangCi.operateHistory.unshift({
-                ...record,
-                time: new Date()
-            })
+            this.currentChangCi.operateHistory.unshift(record)
 
             // 限制历史记录数量
             if (this.currentChangCi.operateHistory.length > 500) {
                 this.currentChangCi.operateHistory = this.currentChangCi.operateHistory.slice(0, 500)
             }
+        },
+        //添加下注记录
+        addBetRecord(record: any) {
+            if (!this.currentChangCi) return
+            if (!this.currentChangCi.addBetHistory) {
+                this.currentChangCi.addBetHistory = []
+            }
+             this.currentChangCi.addBetHistory.unshift(record)
         },
         //更新默认倍率
         updateDefaultBeiLv(pingMaBeiLv: number, teMaBeiLv: number) {
@@ -294,28 +319,9 @@ export const useMainStore = defineStore('main', {
         updateBeilv(pingMa: number, teMa: number) {
             const current = this.currentChangCi
             if (current) {
-                // 记录旧赔率值
-                const oldPingMa = current.pingMaBeilv
-                const oldTeMa = current.teMaBeilv
-
                 // 更新赔率
                 current.pingMaBeilv = pingMa
                 current.teMaBeilv = teMa
-
-                // 添加操作记录
-                this.addOperationRecord({
-                    type: 'odds',
-                    typeText: '赔率设置',
-                    title: '更新赔率设置',
-                    description: `平码: x${oldPingMa} → x${pingMa} | 特码: x${oldTeMa} → x${teMa}`,
-                    details: {
-                        pingMa,
-                        teMa,
-                        oldPingMa,
-                        oldTeMa,
-                        operator: '管理员' // 可以根据实际情况获取当前操作人
-                    }
-                })
             }
             this.updateWinningNumbers()
         },

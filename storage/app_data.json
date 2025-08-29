@@ -1,0 +1,709 @@
+{
+  "nuxt-loading-enable-animation": true,
+  "main": {
+    "currentChangCiId": 1,
+    "changCiList": [
+      {
+        "id": 1,
+        "name": "初始场次",
+        "createdAt": "2025-08-29T09:21:00.766Z",
+        "zodiacData": [
+          {
+            "number": "01",
+            "name": "巳蛇",
+            "total": 0
+          },
+          {
+            "number": "02",
+            "name": "辰龙",
+            "total": 0
+          },
+          {
+            "number": "03",
+            "name": "卯兔",
+            "total": 0
+          },
+          {
+            "number": "04",
+            "name": "寅虎",
+            "total": 0
+          },
+          {
+            "number": "05",
+            "name": "丑牛",
+            "total": 0
+          },
+          {
+            "number": "06",
+            "name": "子鼠",
+            "total": 0
+          },
+          {
+            "number": "07",
+            "name": "亥猪",
+            "total": 0
+          },
+          {
+            "number": "08",
+            "name": "戌狗",
+            "total": 0
+          },
+          {
+            "number": "09",
+            "name": "酉鸡",
+            "total": 0
+          },
+          {
+            "number": "10",
+            "name": "申猴",
+            "total": 0
+          },
+          {
+            "number": "11",
+            "name": "未羊",
+            "total": 0
+          },
+          {
+            "number": "12",
+            "name": "午马",
+            "total": 0
+          },
+          {
+            "number": "13",
+            "name": "巳蛇",
+            "total": 0
+          },
+          {
+            "number": "14",
+            "name": "辰龙",
+            "total": 0
+          },
+          {
+            "number": "15",
+            "name": "卯兔",
+            "total": 0
+          },
+          {
+            "number": "16",
+            "name": "寅虎",
+            "total": 0
+          },
+          {
+            "number": "17",
+            "name": "丑牛",
+            "total": 0
+          },
+          {
+            "number": "18",
+            "name": "子鼠",
+            "total": 0
+          },
+          {
+            "number": "19",
+            "name": "亥猪",
+            "total": 0
+          },
+          {
+            "number": "20",
+            "name": "戌狗",
+            "total": 0
+          },
+          {
+            "number": "21",
+            "name": "酉鸡",
+            "total": 0
+          },
+          {
+            "number": "22",
+            "name": "申猴",
+            "total": 0
+          },
+          {
+            "number": "23",
+            "name": "未羊",
+            "total": 0
+          },
+          {
+            "number": "24",
+            "name": "午马",
+            "total": 0
+          },
+          {
+            "number": "25",
+            "name": "巳蛇",
+            "total": 0
+          },
+          {
+            "number": "26",
+            "name": "辰龙",
+            "total": 0
+          },
+          {
+            "number": "27",
+            "name": "卯兔",
+            "total": 0
+          },
+          {
+            "number": "28",
+            "name": "寅虎",
+            "total": 0
+          },
+          {
+            "number": "29",
+            "name": "丑牛",
+            "total": 0
+          },
+          {
+            "number": "30",
+            "name": "子鼠",
+            "total": 0
+          },
+          {
+            "number": "31",
+            "name": "亥猪",
+            "total": 0
+          },
+          {
+            "number": "32",
+            "name": "戌狗",
+            "total": 0
+          },
+          {
+            "number": "33",
+            "name": "酉鸡",
+            "total": 0
+          },
+          {
+            "number": "34",
+            "name": "申猴",
+            "total": 0
+          },
+          {
+            "number": "35",
+            "name": "未羊",
+            "total": 0
+          },
+          {
+            "number": "36",
+            "name": "午马",
+            "total": 0
+          },
+          {
+            "number": "37",
+            "name": "巳蛇",
+            "total": 0
+          },
+          {
+            "number": "38",
+            "name": "辰龙",
+            "total": 0
+          },
+          {
+            "number": "39",
+            "name": "卯兔",
+            "total": 0
+          },
+          {
+            "number": "40",
+            "name": "寅虎",
+            "total": 0
+          },
+          {
+            "number": "41",
+            "name": "丑牛",
+            "total": 0
+          },
+          {
+            "number": "42",
+            "name": "子鼠",
+            "total": 0
+          },
+          {
+            "number": "43",
+            "name": "亥猪",
+            "total": 0
+          },
+          {
+            "number": "44",
+            "name": "戌狗",
+            "total": 0
+          },
+          {
+            "number": "45",
+            "name": "酉鸡",
+            "total": 0
+          },
+          {
+            "number": "46",
+            "name": "申猴",
+            "total": 0
+          },
+          {
+            "number": "47",
+            "name": "未羊",
+            "total": 0
+          },
+          {
+            "number": "48",
+            "name": "午马",
+            "total": 0
+          },
+          {
+            "number": "49",
+            "name": "巳蛇",
+            "total": 0
+          }
+        ],
+        "pingMaBeilv": 2,
+        "teMaBeilv": 47,
+        "pingMaList": [],
+        "teMa": "",
+        "total": 0,
+        "peiTotal": 0,
+        "operateHistory": []
+      }
+    ],
+    "currentZodiacData": [
+      {
+        "number": "01",
+        "name": "巳蛇",
+        "total": 0
+      },
+      {
+        "number": "02",
+        "name": "辰龙",
+        "total": 0
+      },
+      {
+        "number": "03",
+        "name": "卯兔",
+        "total": 0
+      },
+      {
+        "number": "04",
+        "name": "寅虎",
+        "total": 0
+      },
+      {
+        "number": "05",
+        "name": "丑牛",
+        "total": 0
+      },
+      {
+        "number": "06",
+        "name": "子鼠",
+        "total": 0
+      },
+      {
+        "number": "07",
+        "name": "亥猪",
+        "total": 0
+      },
+      {
+        "number": "08",
+        "name": "戌狗",
+        "total": 0
+      },
+      {
+        "number": "09",
+        "name": "酉鸡",
+        "total": 0
+      },
+      {
+        "number": "10",
+        "name": "申猴",
+        "total": 0
+      },
+      {
+        "number": "11",
+        "name": "未羊",
+        "total": 0
+      },
+      {
+        "number": "12",
+        "name": "午马",
+        "total": 0
+      },
+      {
+        "number": "13",
+        "name": "巳蛇",
+        "total": 0
+      },
+      {
+        "number": "14",
+        "name": "辰龙",
+        "total": 0
+      },
+      {
+        "number": "15",
+        "name": "卯兔",
+        "total": 0
+      },
+      {
+        "number": "16",
+        "name": "寅虎",
+        "total": 0
+      },
+      {
+        "number": "17",
+        "name": "丑牛",
+        "total": 0
+      },
+      {
+        "number": "18",
+        "name": "子鼠",
+        "total": 0
+      },
+      {
+        "number": "19",
+        "name": "亥猪",
+        "total": 0
+      },
+      {
+        "number": "20",
+        "name": "戌狗",
+        "total": 0
+      },
+      {
+        "number": "21",
+        "name": "酉鸡",
+        "total": 0
+      },
+      {
+        "number": "22",
+        "name": "申猴",
+        "total": 0
+      },
+      {
+        "number": "23",
+        "name": "未羊",
+        "total": 0
+      },
+      {
+        "number": "24",
+        "name": "午马",
+        "total": 0
+      },
+      {
+        "number": "25",
+        "name": "巳蛇",
+        "total": 0
+      },
+      {
+        "number": "26",
+        "name": "辰龙",
+        "total": 0
+      },
+      {
+        "number": "27",
+        "name": "卯兔",
+        "total": 0
+      },
+      {
+        "number": "28",
+        "name": "寅虎",
+        "total": 0
+      },
+      {
+        "number": "29",
+        "name": "丑牛",
+        "total": 0
+      },
+      {
+        "number": "30",
+        "name": "子鼠",
+        "total": 0
+      },
+      {
+        "number": "31",
+        "name": "亥猪",
+        "total": 0
+      },
+      {
+        "number": "32",
+        "name": "戌狗",
+        "total": 0
+      },
+      {
+        "number": "33",
+        "name": "酉鸡",
+        "total": 0
+      },
+      {
+        "number": "34",
+        "name": "申猴",
+        "total": 0
+      },
+      {
+        "number": "35",
+        "name": "未羊",
+        "total": 0
+      },
+      {
+        "number": "36",
+        "name": "午马",
+        "total": 0
+      },
+      {
+        "number": "37",
+        "name": "巳蛇",
+        "total": 0
+      },
+      {
+        "number": "38",
+        "name": "辰龙",
+        "total": 0
+      },
+      {
+        "number": "39",
+        "name": "卯兔",
+        "total": 0
+      },
+      {
+        "number": "40",
+        "name": "寅虎",
+        "total": 0
+      },
+      {
+        "number": "41",
+        "name": "丑牛",
+        "total": 0
+      },
+      {
+        "number": "42",
+        "name": "子鼠",
+        "total": 0
+      },
+      {
+        "number": "43",
+        "name": "亥猪",
+        "total": 0
+      },
+      {
+        "number": "44",
+        "name": "戌狗",
+        "total": 0
+      },
+      {
+        "number": "45",
+        "name": "酉鸡",
+        "total": 0
+      },
+      {
+        "number": "46",
+        "name": "申猴",
+        "total": 0
+      },
+      {
+        "number": "47",
+        "name": "未羊",
+        "total": 0
+      },
+      {
+        "number": "48",
+        "name": "午马",
+        "total": 0
+      },
+      {
+        "number": "49",
+        "name": "巳蛇",
+        "total": 0
+      }
+    ],
+    "morenPingMaBeiLv": 2,
+    "morenTeMaBeiLv": 47,
+    "undoStack": [
+      {
+        "operation": {
+          "type": "more",
+          "typeText": "批量加注",
+          "title": "批量加注",
+          "description": "加注 4个号码 各10元",
+          "details": {
+            "numbers": [
+              "11",
+              "23",
+              "35",
+              "47"
+            ],
+            "amount": 10,
+            "changes": [
+              {
+                "number": "11",
+                "amount": 10,
+                "total": 10,
+                "oldTotal": 0,
+                "zodiac": "未羊"
+              },
+              {
+                "number": "23",
+                "amount": 10,
+                "total": 10,
+                "oldTotal": 0,
+                "zodiac": "未羊"
+              },
+              {
+                "number": "35",
+                "amount": 10,
+                "total": 10,
+                "oldTotal": 0,
+                "zodiac": "未羊"
+              },
+              {
+                "number": "47",
+                "amount": 10,
+                "total": 10,
+                "oldTotal": 0,
+                "zodiac": "未羊"
+              }
+            ],
+            "operator": "用户"
+          },
+          "time": "2025-08-29T06:02:52.800Z",
+          "undoable": true
+        },
+        "reverseData": [
+          {
+            "number": "11",
+            "oldTotal": 0,
+            "zodiac": "未羊"
+          },
+          {
+            "number": "23",
+            "oldTotal": 0,
+            "zodiac": "未羊"
+          },
+          {
+            "number": "35",
+            "oldTotal": 0,
+            "zodiac": "未羊"
+          },
+          {
+            "number": "47",
+            "oldTotal": 0,
+            "zodiac": "未羊"
+          }
+        ]
+      },
+      {
+        "operation": {
+          "type": "more",
+          "typeText": "批量加注",
+          "title": "批量加注",
+          "description": "加注 5个号码 各100元",
+          "details": {
+            "numbers": [
+              "08",
+              "18",
+              "28",
+              "38",
+              "48"
+            ],
+            "amount": 100,
+            "changes": [
+              {
+                "number": "08",
+                "amount": 100,
+                "total": 100,
+                "oldTotal": 0,
+                "zodiac": "戌狗"
+              },
+              {
+                "number": "18",
+                "amount": 100,
+                "total": 100,
+                "oldTotal": 0,
+                "zodiac": "子鼠"
+              },
+              {
+                "number": "28",
+                "amount": 100,
+                "total": 100,
+                "oldTotal": 0,
+                "zodiac": "寅虎"
+              },
+              {
+                "number": "38",
+                "amount": 100,
+                "total": 100,
+                "oldTotal": 0,
+                "zodiac": "辰龙"
+              },
+              {
+                "number": "48",
+                "amount": 100,
+                "total": 100,
+                "oldTotal": 0,
+                "zodiac": "午马"
+              }
+            ],
+            "operator": "用户"
+          },
+          "time": "2025-08-29T06:04:22.882Z",
+          "undoable": true
+        },
+        "reverseData": [
+          {
+            "number": "08",
+            "oldTotal": 0,
+            "zodiac": "戌狗"
+          },
+          {
+            "number": "18",
+            "oldTotal": 0,
+            "zodiac": "子鼠"
+          },
+          {
+            "number": "28",
+            "oldTotal": 0,
+            "zodiac": "寅虎"
+          },
+          {
+            "number": "38",
+            "oldTotal": 0,
+            "zodiac": "辰龙"
+          },
+          {
+            "number": "48",
+            "oldTotal": 0,
+            "zodiac": "午马"
+          }
+        ]
+      },
+      {
+        "operation": {
+          "type": "more",
+          "typeText": "批量加注",
+          "title": "批量加注",
+          "description": "加注 寅虎04 各100元",
+          "details": {
+            "numbers": [
+              "04"
+            ],
+            "amount": 100,
+            "changes": [
+              {
+                "number": "04",
+                "amount": 100,
+                "total": 100,
+                "oldTotal": 0,
+                "zodiac": "寅虎"
+              }
+            ],
+            "operator": "用户"
+          },
+          "time": "2025-08-29T06:04:29.500Z",
+          "undoable": true
+        },
+        "reverseData": [
+          {
+            "number": "04",
+            "oldTotal": 0,
+            "zodiac": "寅虎"
+          }
+        ]
+      }
+    ],
+    "redoStack": []
+  }
+}
