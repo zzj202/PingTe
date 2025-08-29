@@ -23,8 +23,8 @@
               </var-chip>
             </div>
             <div class="record-time">
-              <var-icon name="clock-time-four-outline" size="14" />
-              {{ formatTime(record.time) }}
+              <var-icon name="clock-time-four-outline" size="16" />
+              <span class="time-text">{{ formatTime(record.time) }}</span>
             </div>
           </div>
 
@@ -34,8 +34,6 @@
                 {{ record.description }}
               </div>
 
-              <!-- 金额显示 -->
-              <!-- 修改后的金额显示部分 -->
               <div class="amount-display" v-if="record.details.amount">
                 <span class="amount-label">总金额:</span>
                 <span class="amount-value" :class="record.type">
@@ -45,9 +43,8 @@
             </div>
 
             <div class="record-details">
-              <!-- 号码信息 -->
               <div class="detail-row" v-if="record.details.numbers?.length">
-                <var-icon name="numeric" size="14" />
+                <var-icon name="numeric" size="16" />
                 <span class="detail-label">号码:</span>
                 <div class="number-bubbles">
                   <span class="number-bubble" v-for="(num, i) in record.details.numbers" :key="i">
@@ -56,18 +53,11 @@
                 </div>
               </div>
 
-              <!-- 生肖信息 -->
               <div class="detail-row" v-if="record.details.zodiac">
-                <var-icon name="zodiac-rat" size="14" />
+                <var-icon name="zodiac-rat" size="16" />
                 <span class="detail-label">生肖:</span>
                 <span class="detail-value">{{ record.details.zodiac }}</span>
               </div>
-              <!-- 操作人信息 -->
-              <!-- <div class="detail-row" v-if="record.details.operator">
-                <var-icon name="account" size="14" />
-                <span class="detail-label">操作人:</span>
-                <span class="detail-value">{{ record.details.operator }}</span>
-              </div> -->
             </div>
           </div>
         </div>
@@ -83,19 +73,13 @@ import dayjs from 'dayjs'
 
 const store = useMainStore()
 
-// 筛选条件
 const filterType = ref('all')
-
-// 分页状态
 const loading = ref(false)
 const finished = ref(false)
 const page = ref(1)
 const pageSize = 20
-
-// 操作记录数据
 const allRecords = ref<OperationRecord[]>([])
 
-// 从store获取操作记录
 onMounted(() => {
   loadRecords()
 })
@@ -106,13 +90,11 @@ const loadRecords = () => {
   }
 }
 
-// 筛选后的记录
 const filteredRecords = computed(() => {
   if (filterType.value === 'all') return allRecords.value
   return allRecords.value.filter(r => r.type === filterType.value)
 })
 
-// 加载更多数据
 const loadMore = () => {
   setTimeout(() => {
     if (page.value * pageSize < allRecords.value.length) {
@@ -124,7 +106,6 @@ const loadMore = () => {
   }, 500)
 }
 
-// 获取标签类型
 const getChipType = (type: string) => {
   switch (type) {
     case 'more':
@@ -144,7 +125,6 @@ const getChipType = (type: string) => {
   }
 }
 
-// 获取类型文本
 const getTypeText = (type: string) => {
   switch (type) {
     case 'more':
@@ -164,18 +144,30 @@ const getTypeText = (type: string) => {
   }
 }
 
-// 格式化时间显示
 const formatTime = (time: Date) => {
-  return dayjs(time).format('MM-DD HH:mm:ss')
+  const formattedTime = dayjs(time).format('MM-DD HH:mm:ss')
+  const now = dayjs()
+  const diffInMinutes = now.diff(time, 'minute')
+  
+  let relativeTime = ''
+  if (diffInMinutes < 1) {
+    relativeTime = '刚刚'
+  } else if (diffInMinutes < 60) {
+    relativeTime = `${diffInMinutes}分钟前`
+  } else if (diffInMinutes < 1440) {
+    relativeTime = `${Math.floor(diffInMinutes / 60)}小时前`
+  } else {
+    relativeTime = `${Math.floor(diffInMinutes / 1440)}天前`
+  }
+  
+  return `${formattedTime} (${relativeTime})`
 }
-// 计算总金额（numbers数量 × amount）
+
 const calculateTotalAmount = (record: OperationRecord) => {
   if (!record.details.amount) return 0
   const numberCount = record.details.numbers?.length || 1
   return record.details.amount * numberCount
 }
-
-// 类型定义
 
 interface OperationRecord {
   type: 'more' | 'bet' | 'reduce' | 'zodiac' | 'odds' | 'numbers' | 'changci'
@@ -187,17 +179,15 @@ interface OperationRecord {
     numbers?: string[]
     amount?: number
     zodiac?: string
-    pingMa?: number  //平码倍率
-    teMa?: number | string  //特码倍率
-    oldPingMa?: number  //旧的
-    oldTeMa?: number | string    //旧的
-    pingMaList?: string[]  //平码
-    changciId?: number  //场次ID
+    pingMa?: number
+    teMa?: number | string
+    oldPingMa?: number
+    oldTeMa?: number | string
+    pingMaList?: string[]
+    changciId?: number
     changciName?: string
     operator?: string
     oldPingMaList?: string[]
-
-
   }
 }
 </script>
@@ -254,11 +244,15 @@ interface OperationRecord {
 }
 
 .record-time {
-  font-size: 12px;
-  color: #666;
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 6px;
+  font-size: 14px;
+  color: #666;
+}
+
+.time-text {
+  font-size: 14px;
 }
 
 .record-content {
@@ -277,6 +271,8 @@ interface OperationRecord {
   font-weight: 500;
   font-size: 15px;
   color: #333;
+  flex: 1;
+  margin-right: 12px;
 }
 
 .amount-display {
@@ -329,6 +325,7 @@ interface OperationRecord {
 
 .detail-value {
   color: #333;
+  font-weight: 500;
 }
 
 .number-bubbles {
@@ -339,45 +336,34 @@ interface OperationRecord {
 
 .number-bubble {
   background-color: #f0f0f0;
-  padding: 2px 8px;
+  padding: 4px 10px;
   border-radius: 12px;
   font-size: 12px;
+  color: #333;
 }
 
 /* 不同类型卡片样式 */
-.type-more {
-  .record-card {
-    border-left: 4px solid var(--color-primary);
-  }
+.type-more .record-card {
+  border-left: 4px solid var(--color-primary);
 }
 
-.type-bet {
-  .record-card {
-    border-left: 4px solid var(--color-primary);
-  }
+.type-bet .record-card {
+  border-left: 4px solid var(--color-primary);
 }
 
-.type-reduce {
-  .record-card {
-    border-left: 4px solid var(--color-danger);
-  }
+.type-reduce .record-card {
+  border-left: 4px solid var(--color-danger);
 }
 
-.type-zodiac {
-  .record-card {
-    border-left: 4px solid var(--color-success);
-  }
+.type-zodiac .record-card {
+  border-left: 4px solid var(--color-success);
 }
 
-.type-odds {
-  .record-card {
-    border-left: 4px solid var(--color-warning);
-  }
+.type-odds .record-card {
+  border-left: 4px solid var(--color-warning);
 }
 
-.type-numbers {
-  .record-card {
-    border-left: 4px solid var(--color-info);
-  }
+.type-numbers .record-card {
+  border-left: 4px solid var(--color-info);
 }
 </style>

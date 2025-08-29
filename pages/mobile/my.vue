@@ -6,18 +6,13 @@
       <div class="odds-input-group">
         <div class="odds-input">
           <label>平码赔率:</label>
-          <var-counter :min="0" :max="5" v-model="pingMaInput"/>
+          <var-counter :min="0" :max="5" v-model="pingMaInput" />
         </div>
         <div class="odds-input">
           <label>特码赔率:</label>
-          <var-counter :min="20" :max="60" v-model="teMaInput"/>
+          <var-counter :min="20" :max="60" v-model="teMaInput" />
         </div>
-        <var-button
-            type="primary"
-            size="small"
-            @click="saveDefaultBeiLv"
-            class="save-button"
-        >
+        <var-button type="primary" size="small" @click="saveDefaultBeiLv" class="save-button">
           保存
         </var-button>
       </div>
@@ -34,12 +29,7 @@
           <span class="button-icon">👀</span> 查看数据
         </button>
       </div>
-      <textarea
-          v-if="showExport"
-          v-model="exportData"
-          readonly
-          class="data-preview"
-      ></textarea>
+      <textarea v-if="showExport" v-model="exportData" readonly class="data-preview"></textarea>
     </div>
     <!-- 导入场次数据 -->
     <div class="import-section">
@@ -56,17 +46,9 @@
         </label>
       </div>
 
-      <textarea
-          v-model="importData"
-          placeholder="请粘贴JSON数据"
-          class="import-input"
-      ></textarea>
+      <textarea v-model="importData" placeholder="请粘贴JSON数据" class="import-input"></textarea>
 
-      <button
-          class="import-button"
-          @click="importChangCi"
-          :disabled="!importData.trim()"
-      >
+      <button class="import-button" @click="importChangCi" :disabled="!importData.trim()">
         <span class="button-icon">📥</span> 导入
       </button>
     </div>
@@ -78,13 +60,29 @@
       </button>
       <p class="danger-hint">此操作不可撤销，请谨慎操作！</p>
     </div>
+    <!-- 读取文件到localStorage-->
+    <div class="export-section">
+      <h3>导出 Pinia Store 数据</h3>
+      <button class="export-button" @click="exportLocalStorageToFile">
+        <span class="button-icon">💾</span> 导出数据到文件
+      </button>
+      <p class="hint-text">将当前 Pinia Store 数据导出为 JSON 文件，便于备份或迁移。</p>
+    </div>
+  <!--从文件导入到localStorage --> 
+    <div class="import-section">
+      <h3>从文件导入 Pinia Store 数据</h3>
+      <button class="import-button" @click="handleFileInput">
+        <span class="button-icon">📂</span> 从文件导入数据
+      </button>
+      <p class="hint-text">选择之前导出的 JSON 文件，将数据导入到 Pinia Store。</p>
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import {ref} from 'vue'
-import {useMainStore} from '@/stores/mainStore'
-import {Snackbar, Dialog} from '@varlet/ui'
+import { ref } from 'vue'
+import { useMainStore } from '@/stores/mainStore'
+import { Snackbar, Dialog } from '@varlet/ui'
 
 const store = useMainStore()
 const importStrategy = ref<'new' | 'overwrite' | 'merge'>('new')
@@ -169,12 +167,12 @@ const confirmClearAll = async () => {
   if (action !== 'confirm') return
   clearAllChangCi()
 }
-
+//修改倍率
 const saveDefaultBeiLv = () => {
   store.updateDefaultBeiLv(pingMaInput.value, teMaInput.value)
   Snackbar.success('保存成功')
 }
-
+//复制操作
 function fallbackCopy(text) {
   const textarea = document.createElement('textarea')
   textarea.value = text
@@ -195,7 +193,90 @@ function fallbackCopy(text) {
     document.body.removeChild(textarea)
   }
 }
+// 导出 localStorage 数据到文件
+function exportLocalStorageToFile() {
+  // 获取所有 localStorage 数据
+  const allData = {};
+  for (let i = 0; i < localStorage.length; i++) {
+    const key = localStorage.key(i);
+    if (key) {
+      allData[key] = localStorage.getItem(key);
+    }
+  }
 
+  // 或者只获取特定的 Pinia store 数据
+  const piniaStoreData = localStorage.getItem('pinia_main'); // 'main' 是你的 store 名称
+
+  // 创建 Blob 对象
+  const blob = new Blob([JSON.stringify(piniaStoreData || allData, null, 2)], {
+    type: 'application/json'
+  });
+
+  // 创建下载链接
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'pinia_store_backup.json';
+
+  // 触发下载
+  document.body.appendChild(a);
+  a.click();
+
+  // 清理
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+// 从文件导入 localStorage 数据
+function importLocalStorageFromFile(file) {
+  const reader = new FileReader();
+
+  reader.onload = function (e) {
+    try {
+      const data = JSON.parse(e.target.result);
+
+      // 如果是完整的 localStorage 备份
+      if (typeof data === 'object' && !Array.isArray(data)) {
+        Object.keys(data).forEach(key => {
+          localStorage.setItem(key, data[key]);
+        });
+      }
+      // 如果是单个 Pinia store 数据
+      else {
+        localStorage.setItem('pinia_main', data);
+      }
+      Snackbar.success('数据导入成功！');
+      // 可选：刷新页面以应用新数据
+      setTimeout(() => {
+        window.location.reload();
+      }, 1000);
+    } catch (error) {
+      Snackbar.error('数据导入失败，请检查文件格式！');
+      console.error('导入失败:', error);
+    }
+  };
+
+  reader.readAsText(file);
+}
+
+// 处理文件输入
+function handleFileInput(event) {
+  // 使用方法
+  // 创建一个文件输入元素让用户选择文件
+  const input = document.createElement('input');
+  input.type = 'file';
+  input.accept = '.json';
+  input.onchange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      importLocalStorageFromFile(file);
+    }
+  };
+  document.body.appendChild(input);
+  input.click();
+  document.body.removeChild(input);
+
+}
 </script>
 
 <style scoped>
@@ -206,7 +287,8 @@ function fallbackCopy(text) {
   font-family: Arial, sans-serif;
 }
 
-.export-section, .import-section {
+.export-section,
+.import-section {
   background-color: #f8f9fa;
   border-radius: 8px;
   padding: 20px;

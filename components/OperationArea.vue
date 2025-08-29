@@ -270,7 +270,7 @@ const processBetCount = () => {
         return
     }
 
-    const MAX_BET_COUNT = 1000
+    const MAX_BET_COUNT = 5000
     if (betCount.value > MAX_BET_COUNT) {
         errorMessage.value = `注数不能超过 ${MAX_BET_COUNT}`
         betCount.value = MAX_BET_COUNT
