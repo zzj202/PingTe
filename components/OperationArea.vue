@@ -9,7 +9,6 @@
                 </div>
 
 
-
                 <!-- 数字输入区域 -->
                 <div class="input-group">
                     <label for="number-input" class="input-label">
@@ -108,6 +107,11 @@
                             已选 {{ selectedZodiacs.length }} 个生肖
                         </span>
                     </div>
+                    <!-- 新增的智能识别输入框 -->
+                    <div class="input-group zodiac-input-group">
+                        <input type="text" v-model="zodiacInput" @input="parseZodiacInput"
+                            placeholder="输入生肖名称，如：马包米 或 龙,猴,兔 或 鸡100狗3羊各数" class="zodiac-input">
+                    </div>
                     <div class="quick-btn-group">
                         <button v-for="zodiac in zodiacList" :key="zodiac.name"
                             @click="toggleZodiacSelection(zodiac.name)" :class="{
@@ -184,10 +188,10 @@ const selectedNumbers = ref<number[]>([])
 const store = useMainStore()
 
 // 固定的快速注数按钮
-const fixedQuickBetCounts = [5, 10, 20, 30, 50, 100, 120, 150, 200, 500]
+const fixedQuickBetCounts = [5, 10, 15, 20, 25, 30, 50, 80, 100, 120, 150, 200, 500]
 const quickBetCounts = ref<number[]>([...fixedQuickBetCounts])
 const customBetCount = ref<number | null>(null)
-
+const zodiacInput = ref('')
 // 表单验证状态
 const isFormValid = computed(() => {
     return numberArray.value.length > 0 && betCount.value > 0 && !errorMessage.value
@@ -280,7 +284,28 @@ const toggleZodiacSelection = (zodiacName: string) => {
     }
     updateNumbersFromSelection()
 }
+// 解析用户输入的生肖名称
+const parseZodiacInput = () => {
+    if (!zodiacInput.value) {
+        selectedZodiacs.value = []
+        return
+    }
 
+    // 定义所有可能的生肖名称
+    const allZodiacs = ['鼠', '牛', '虎', '兔', '龙', '蛇', '马', '羊', '猴', '鸡', '狗', '猪']
+    const matchedZodiacs = []
+
+    // 遍历输入内容，查找匹配的生肖
+    for (const char of zodiacInput.value) {
+        if (allZodiacs.includes(char) && !matchedZodiacs.includes(char)) {
+            matchedZodiacs.push(char)
+        }
+    }
+
+    // 更新选中的生肖
+    selectedZodiacs.value = matchedZodiacs
+    updateNumbersFromSelection()
+}
 // 根据选择更新号码数组
 const updateNumbersFromSelection = () => {
     errorMessage.value = ''
@@ -335,7 +360,7 @@ const processBetCount = () => {
         return
     }
 
-    const MAX_BET_COUNT = 5000
+    const MAX_BET_COUNT = 400
     if (betCount.value > MAX_BET_COUNT) {
         errorMessage.value = `注数不能超过 ${MAX_BET_COUNT}`
         betCount.value = MAX_BET_COUNT
@@ -393,16 +418,6 @@ const setBetCount = (count: number) => {
     betCount.value = count
     errorMessage.value = ""
 }
-
-// 格式化时间
-const formatTime = (timestamp: number) => {
-    const date = new Date(timestamp)
-    const hours = date.getHours().toString().padStart(2, '0')
-    const minutes = date.getMinutes().toString().padStart(2, '0')
-    const seconds = date.getSeconds().toString().padStart(2, '0')
-    return `${hours}:${minutes}:${seconds}`
-}
-
 
 
 
@@ -468,6 +483,7 @@ const resetForm = () => {
     selectedTails.value = []
     selectedZodiacs.value = []
     selectedNumbers.value = []
+    zodiacInput.value   = ''
 }
 </script>
 
@@ -1174,5 +1190,28 @@ const resetForm = () => {
 .history-table th:nth-child(7),
 .history-table td:nth-child(7) {
     width: 60px;
+}
+.zodiac-input-group {
+    margin-bottom: 12px;
+}
+
+.zodiac-input {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    font-size: 14px;
+    transition: border-color 0.2s;
+}
+
+.zodiac-input:focus {
+    outline: none;
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 1px rgba(59, 130, 246, 0.2);
+}
+
+.zodiac-input::placeholder {
+    color: #94a3b8;
+    font-size: 13px;
 }
 </style>
